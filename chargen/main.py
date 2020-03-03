@@ -25,6 +25,7 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Big muscles.",
         "Huge muscles.",
         "Hold a big stick.",
+        "Jump real high.",
     ],
     CHAR_CLASSES.MAGIC_USER: [
         "Eat manna.",
@@ -33,7 +34,8 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Zip zoop zap!",
         "Stroke the beard.",
         "You shall not pass.",
-        "Accurate missile targeting.",
+        "Accurate missiles.",
+        "Float in the air?",
     ],
     CHAR_CLASSES.CLERIC: [
         "Pray.",
@@ -43,6 +45,8 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Get more HPs.",
         "Not afraid of skeletons.",
         "The protection racket has been nerfed.",
+        "Turn into stone.",
+        "Turn spooky bois right round.",
     ],
 }
 
