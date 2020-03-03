@@ -4,6 +4,11 @@ from enum import Enum
 import urwid
 
 
+class BetterButton(urwid.Button):
+    button_left = urwid.Text("-")
+    button_right = urwid.Text("")
+
+
 def menu(title, choices, display_fn=str):
     selected = None
     body = [urwid.Text(title), urwid.Divider()]
@@ -14,11 +19,20 @@ def menu(title, choices, display_fn=str):
         raise urwid.ExitMainLoop()
 
     for c in choices:
-        button = urwid.Button(display_fn(c))
+        button = BetterButton(display_fn(c))
         urwid.connect_signal(button, "click", item_chosen, c)
         body.append(urwid.AttrMap(button, None, focus_map="reversed"))
-    widget = urwid.ListBox(urwid.SimpleFocusListWalker(body))
-    urwid.MainLoop(widget).run()
+    menu_widget = urwid.ListBox(urwid.SimpleFocusListWalker(body))
+    padded = urwid.Padding(menu_widget, left=2, right=2)
+    overlay = urwid.Overlay(
+        padded,
+        urwid.SolidFill("\N{MEDIUM SHADE}"),
+        align="center",
+        width=("relative", 60),
+        valign="middle",
+        height=("relative", 60),
+    )
+    urwid.MainLoop(padded, palette=[("reversed", "standout", "")]).run()
     return selected
 
 
