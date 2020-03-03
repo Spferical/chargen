@@ -88,7 +88,7 @@ def menu(title, choices, display_fn=str, description_fn=lambda c: ""):
         valign="middle",
         height=("relative", 60),
     )
-    urwid.MainLoop(padded, palette=[("reversed", "standout", "")]).run()
+    urwid.MainLoop(overlay, palette=[("reversed", "standout", "")]).run()
     return selected
 
 
