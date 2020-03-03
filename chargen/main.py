@@ -56,7 +56,7 @@ class BetterButton(urwid.Button):
     button_right = urwid.Text("")
 
 
-def menu(title, choices, display_fn=str, description_fn=lambda c: ""):
+def split_menu(title, choices, display_fn=str, description_fn=lambda c: ""):
     selected = None
     body = [urwid.Text(title), urwid.Divider()]
 
@@ -104,18 +104,16 @@ def char_class_desc(cclass):
 
 
 def choose_class():
-    print(
-        menu(
-            "CHOOSE YOUR CLASS",
-            list(CHAR_CLASSES),
-            display_fn=lambda c: c.value,
-            description_fn=char_class_desc,
-        )
+    return split_menu(
+        "CHOOSE YOUR CLASS",
+        list(CHAR_CLASSES),
+        display_fn=lambda c: c.value,
+        description_fn=char_class_desc,
     )
 
 
 def main():
-    choose_class()
+    char_class = choose_class()
 
 
 if __name__ == "__main__":
