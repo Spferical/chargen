@@ -23,7 +23,11 @@ def menu(title, choices, display_fn=str):
         urwid.connect_signal(button, "click", item_chosen, c)
         body.append(urwid.AttrMap(button, None, focus_map="reversed"))
     menu_widget = urwid.ListBox(urwid.SimpleFocusListWalker(body))
-    padded = urwid.Padding(menu_widget, left=2, right=2)
+    right_txt = urwid.Text("foo")
+    right_fill = urwid.Filler(right_txt, valign="top")
+    right_pad = urwid.Padding(right_fill, left=1, right=1)
+    columns = urwid.Columns([menu_widget, right_pad])
+    padded = urwid.Padding(columns, left=2, right=2)
     overlay = urwid.Overlay(
         padded,
         urwid.SolidFill("\N{MEDIUM SHADE}"),
