@@ -260,8 +260,9 @@ class PlayerDisplay(urwid.WidgetWrap):
     def update(self, char_info):
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
-        for (stat, val) in char_info.stats.items():
-            self.stat_infos[stat].set_text(f"{stat.value}: {val}")
+        if any(val != 0 for val in char_info.stats.values()):  # ignore if all zeros
+            for (stat, val) in char_info.stats.items():
+                self.stat_infos[stat].set_text(f"{stat.value}: {val}")
 
 
 class Game:
