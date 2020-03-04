@@ -372,6 +372,7 @@ class Game:
         yield self.choose_class_menu()
         yield self.point_buy()
         yield self.choose_skill()
+        year = 1
         while True:
             yield self.choose_hobby()
             if self.player.hobby == HOBBY.RUN:
@@ -380,9 +381,24 @@ class Game:
                 stat = STATS.INT
             elif self.player.hobby == HOBBY.BIRDWATCHING:
                 stat = STATS.WIS
-            bonus = dice(2, 4)
+            bonus = dice(1, 4)
             self.player.stats[stat] += bonus
-            yield self.popup_message(f"+2d4={bonus} {stat.value}!", self.next_screen)
+            yield self.popup_message(f"+1d4={bonus} {stat.value}!", self.next_screen)
+
+            year += 1
+            if year > 5:
+                yield self.aging_check()
+            if self.player.stats[STATS.CON] <= 0:
+                yield self.popup_message("YOU DIE", self.next_screen)
+                break
+        raise urwid.ExitMainLoop()
+
+    def aging_check(self):
+        msg = "TIME TAKES ITS TOLL"
+        con_debuff = dice(2, 4)
+        self.player.stats[STATS.CON] -= con_debuff
+        msg += f"\n\n-2d4=-{con_debuff} CON"
+        return self.popup_message(msg, self.next_screen)
 
     def run(self):
         self.loop = urwid.MainLoop(self.top, palette=[("reversed", "standout", "")])
