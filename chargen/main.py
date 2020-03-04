@@ -107,7 +107,8 @@ CHAR_CLASS_DESC_FRAGMENTS = {
 
 SKILL_DESCS = {
     SKILLS.JUMP: "You can jump very high. Gives +5 on jump height rolls.",
-    SKILLS.CLIMB: "You can scale ropes, trees, walls, and more with ease. Adds a d12 to rolls involving scaling obstacles.",
+    SKILLS.CLIMB: "You can scale ropes, trees, walls, and more with ease."
+    "Adds a d12 to rolls involving scaling obstacles.",
 }
 
 
@@ -178,8 +179,6 @@ class PointBuy(urwid.WidgetWrap):
             urwid.connect_signal(stat_edit, "postchange", on_change)
             self.stat_editors[s] = stat_edit
             stat_edit_column.append(stat_edit)
-
-            char_class_bonus = bonuses.get(s, 0)
             stat_bonus_column.append(urwid.Text(f"+{bonuses.get(s, 0)}"))
         stat_edit_column = urwid.Pile(stat_edit_column)
         stat_bonus_column = urwid.Pile(stat_bonus_column)
