@@ -77,6 +77,7 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Huge muscles.",
         "Hold a big stick.",
         "Jump real high.",
+        "Heavy armor proficiency.",
     ],
     CHAR_CLASSES.MAGIC_USER: [
         "Eat manna.",
@@ -87,6 +88,7 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "You shall not pass.",
         "Accurate missiles.",
         "Float in the air?",
+        "Start with force bolt.",
     ],
     CHAR_CLASSES.CLERIC: [
         "Pray.",
@@ -95,9 +97,10 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Dear lord.",
         "Get more HPs.",
         "Not afraid of skeletons.",
-        "The protection racket has been nerfed.",
+        "Protection is a racket.",
         "Turn into stone.",
-        "Turn spooky bois right round.",
+        "Turn spooky bois around.",
+        "Turn on the lights when it's too dark to see.",
     ],
 }
 
@@ -200,10 +203,7 @@ class PointBuy(urwid.WidgetWrap):
 
 
 def char_class_desc(cclass):
-    text = ""
-    for _ in range(3):
-        text += random.choice(CHAR_CLASS_DESC_FRAGMENTS[cclass]) + " "
-    return text
+    return " ".join(random.sample(CHAR_CLASS_DESC_FRAGMENTS[cclass], 3))
 
 
 class Game:
