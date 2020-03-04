@@ -13,6 +13,7 @@ class CharInfo:
     def __init__(self):
         self.stats = {stat: 0 for stat in STATS}
         self.char_class = None
+        self.skills = set()
 
 
 class IntEditArrows(urwid.IntEdit):
@@ -51,6 +52,11 @@ class STATS(Enum):
     WIS = "WIS"
     CHA = "CHA"
     LUC = "LUC"
+
+
+class SKILLS(Enum):
+    JUMP = "Jumping"
+    CLIMB = "Climbing"
 
 
 CHAR_CLASS_STAT_BONUSES = {
@@ -93,6 +99,12 @@ CHAR_CLASS_DESC_FRAGMENTS = {
         "Turn into stone.",
         "Turn spooky bois right round.",
     ],
+}
+
+
+SKILL_DESCS = {
+    SKILLS.JUMP: "You can jump very high. Gives +5 on jump height rolls.",
+    SKILLS.CLIMB: "You can scale ropes, trees, walls, and more with ease. Adds a d12 to rolls involving scaling obstacles.",
 }
 
 
@@ -225,6 +237,10 @@ class Game:
         self.player.stats = stats
         self.next_screen()
 
+    def on_skill_chosen(self, skill):
+        self.player.skills.add(skill)
+        self.next_screen()
+
     def play_linear(self):
         yield SplitMenu(
             "CHOOSE YOUR CLASS",
@@ -237,6 +253,14 @@ class Game:
         yield PointBuy(
             callback=self.on_point_buy_done,
             bonuses=CHAR_CLASS_STAT_BONUSES[self.player.char_class],
+        )
+
+        yield SplitMenu(
+            "CHOOSE A SKILL",
+            list(set(SKILLS).difference(self.player.skills)),
+            display_fn=lambda c: c.value,
+            description_fn=lambda skill: SKILL_DESCS[skill],
+            callback=self.on_skill_chosen,
         )
 
     def run(self):
