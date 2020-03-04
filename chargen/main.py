@@ -9,6 +9,18 @@ import urwid
 logging.basicConfig(filename="chargen.log", level=logging.DEBUG)
 
 
+class IntEditArrows(urwid.IntEdit):
+    def keypress(self, size, key):
+        if key == "right":
+            self.set_edit_text(str(self.value() + 1))
+            self.set_edit_pos(len(self.get_edit_text()))
+        elif key == "left":
+            self.set_edit_text(str(self.value() - 1))
+            self.set_edit_pos(len(self.get_edit_text()))
+        else:
+            return super().keypress(size, key)
+
+
 class CHAR_CLASSES(Enum):
     FIGHTING_MAN = "Fighting Man"
     MAGIC_USER = "Magic User"
@@ -131,7 +143,7 @@ def point_buy():
         points_left_text.set_text(f"Points left: {get_points_remaining()}")
 
     for s in STATS:
-        stat_edit = urwid.IntEdit(s.value + "=", 10)
+        stat_edit = IntEditArrows(s.value + "=", 10)
         urwid.connect_signal(stat_edit, "postchange", on_change)
         stat_editors[s] = stat_edit
         body.append(stat_edit)
@@ -139,9 +151,8 @@ def point_buy():
     menu = urwid.ListBox(menu_walker)
 
     def unhandled_input(key):
-        if key == "enter":
-            if get_points_remaining() == 0:
-                raise urwid.ExitMainLoop()
+        if key == "enter" and get_points_remaining() == 0:
+            raise urwid.ExitMainLoop()
 
     urwid.connect_signal(menu_walker, "modified", on_change)
     loop = urwid.MainLoop(menu, unhandled_input=unhandled_input)
