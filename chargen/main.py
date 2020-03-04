@@ -93,14 +93,14 @@ CHAR_CLASS_DESC_FRAGMENTS = {
     CHAR_CLASSES.CLERIC: [
         "Pray.",
         "Wololo.",
-        "Fanciest hat of them all.",
+        "Wear the fanciest hats.",
         "Dear lord.",
         "Get more HPs.",
         "Not afraid of skeletons.",
         "Protection is a racket.",
         "Turn into stone.",
         "Turn spooky bois around.",
-        "Turn on the lights when it's too dark to see.",
+        "Turn on the light.",
     ],
 }
 
