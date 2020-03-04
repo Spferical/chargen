@@ -6,7 +6,7 @@ import logging
 import urwid
 
 
-logging.basicConfig(filename="chargen.log", level=logging.DEBUG)
+logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
 
 class CharInfo:
