@@ -200,7 +200,9 @@ class PointBuy(urwid.WidgetWrap):
         points_remaining = PointBuy.TOTAL_POINTS
         for stat in STATS:
             val = self.stat_editors[stat].value()
-            points_remaining += 10 - val
+            points_remaining -= min(val, 16) - 10
+            if val > 16:
+                points_remaining -= (val - 16) * 2
         return points_remaining
 
     def __init__(self, callback, bonuses):
