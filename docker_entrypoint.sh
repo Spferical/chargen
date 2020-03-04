@@ -2,4 +2,4 @@
 USER=chargen
 VOLUME=/chargen/data/
 chown -R $USER $VOLUME && \
-exec gotty -w pipenv --bare run python3 chargen/main.py "$@"
+exec gotty -w --title-format "7DRL" pipenv --bare run python3 chargen/main.py "$@"
