@@ -1,27 +1,33 @@
 from golang:1-buster
 
 run apt-get update && apt-get install -y --no-install-recommends \
-	pipenv\
+	pipenv \
 	locales
+
+run adduser --system --shell /bin/bash chargen
 
 run go get github.com/yudai/gotty
 
-run adduser --system chargen
+run ln -s /go/bin/gotty /usr/local/bin/gotty
 
 workdir /chargen
 
 volume /chargen/data/
 
 # Set the locale
-RUN locale-gen en_US.UTF-8  
-ENV LANG en_US.UTF-8  
-ENV LANGUAGE en_US:en  
-ENV LC_ALL en_US.UTF-8
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
+RUN locale-gen en_US.UTF-8
 
-copy Pipfile Pipfile.lock docker_entrypoint.sh /chargen/
+RUN echo 'export LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8' > /etc/profile.d/locale.sh
 
-run pipenv install
+copy --chown=chargen:root Pipfile Pipfile.lock /chargen/
 
+run su - chargen -c 'cd /chargen && pipenv install'
+
+copy .gotty /home/chargen
 copy ./chargen /chargen/chargen
+copy docker_entrypoint.sh /chargen/
 
 cmd [ "./docker_entrypoint.sh" ]

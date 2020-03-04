@@ -1,0 +1,3 @@
+preferences {
+    font_size = 30
+}
