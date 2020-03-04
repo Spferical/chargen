@@ -9,6 +9,12 @@ import urwid
 logging.basicConfig(filename="chargen.log", level=logging.DEBUG)
 
 
+class CharInfo:
+    def __init__(self):
+        self.stats = {stat: 0 for stat in STATS}
+        self.char_class = None
+
+
 class IntEditArrows(urwid.IntEdit):
     def keypress(self, size, key):
         if key in ("right", "l"):
@@ -95,79 +101,81 @@ class BetterButton(urwid.Button):
     button_right = urwid.Text("")
 
 
-def split_menu(title, choices, display_fn=str, description_fn=lambda c: ""):
-    selected = None
-    body = [urwid.Text(title), urwid.Divider()]
+class SplitMenu(urwid.WidgetWrap):
+    def __init__(
+        self,
+        title,
+        choices,
+        display_fn=str,
+        description_fn=lambda c: "",
+        callback=lambda c: None,
+    ):
+        body = [urwid.Text(title), urwid.Divider()]
 
-    def item_chosen(button, choice):
-        nonlocal selected
-        selected = choice
-        raise urwid.ExitMainLoop()
+        def item_chosen(button, choice):
+            callback(choice)
 
-    for c in choices:
-        button = BetterButton(display_fn(c))
-        urwid.connect_signal(button, "click", item_chosen, c)
-        body.append(urwid.AttrMap(button, None, focus_map="reversed"))
-    menu = urwid.SimpleFocusListWalker(body)
-    listbox = ListBoxVikeys(menu)
-    right_txt = urwid.Text("")
+        for c in choices:
+            button = BetterButton(display_fn(c))
+            urwid.connect_signal(button, "click", item_chosen, c)
+            body.append(urwid.AttrMap(button, None, focus_map="reversed"))
+        menu = urwid.SimpleFocusListWalker(body)
+        listbox = ListBoxVikeys(menu)
+        right_txt = urwid.Text("")
+        right_fill = urwid.Filler(right_txt, valign="middle")
 
-    def on_focus_changed():
-        focused_index = menu.get_focus()[1]
-        focused_choice = choices[focused_index - 2]
-        right_txt.set_text(description_fn(focused_choice))
+        def on_focus_changed():
+            focused_index = menu.get_focus()[1]
+            focused_choice = choices[focused_index - 2]
+            right_txt.set_text(description_fn(focused_choice))
 
-    urwid.connect_signal(menu, "modified", on_focus_changed)
+        urwid.connect_signal(menu, "modified", on_focus_changed)
 
-    right_fill = urwid.Filler(right_txt, valign="top")
-    right_pad = urwid.Padding(right_fill, left=1, right=1)
-    columns = urwid.Columns([listbox, right_pad])
-    padded = urwid.Padding(columns, left=2, right=2)
-    overlay = urwid.Overlay(
-        padded,
-        urwid.SolidFill("\N{MEDIUM SHADE}"),
-        align="center",
-        width=("relative", 60),
-        valign="middle",
-        height=("relative", 60),
-    )
-    urwid.MainLoop(overlay, palette=[("reversed", "standout", "")]).run()
-    return selected
+        columns = urwid.Columns([listbox, right_fill])
+        super().__init__(columns)
 
 
-def point_buy():
-    total_points = 24
-    body = [urwid.Text("CHOOSE YOUR STATS"), urwid.Divider()]
-    points_left_text = urwid.Text(f"Points left: {total_points}")
-    body.append(points_left_text)
-    stat_editors = {}
+class PointBuy(urwid.WidgetWrap):
+    TOTAL_POINTS = 24
 
-    def get_points_remaining():
-        points_remaining = total_points
+    def get_points_remaining(self):
+        points_remaining = PointBuy.TOTAL_POINTS
         for stat in STATS:
-            val = stat_editors[stat].value()
+            val = self.stat_editors[stat].value()
             points_remaining += 10 - val
         return points_remaining
 
-    def on_change(*args):
-        points_left_text.set_text(f"Points left: {get_points_remaining()}")
+    def __init__(self, callback):
+        self.stat_editors = {}
+        points_left_text = urwid.Text(f"Points left: {PointBuy.TOTAL_POINTS}")
+        self.callback = callback
 
-    for s in STATS:
-        stat_edit = IntEditArrows(s.value + "=", 10)
-        urwid.connect_signal(stat_edit, "postchange", on_change)
-        stat_editors[s] = stat_edit
-        body.append(stat_edit)
-    menu_walker = urwid.SimpleFocusListWalker(body)
-    menu = ListBoxVikeys(menu_walker)
+        body = [urwid.Text("CHOOSE YOUR STATS"), urwid.Divider()]
+        body.append(points_left_text)
 
-    def unhandled_input(key):
-        if key == "enter" and get_points_remaining() == 0:
-            raise urwid.ExitMainLoop()
+        def on_change(*args):
+            points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
 
-    urwid.connect_signal(menu_walker, "modified", on_change)
-    loop = urwid.MainLoop(menu, unhandled_input=unhandled_input)
-    loop.run()
-    return {stat: editor.value() for (stat, editor) in stat_editors.items()}
+        for s in STATS:
+            stat_edit = IntEditArrows(s.value + "=", 10)
+            urwid.connect_signal(stat_edit, "postchange", on_change)
+            self.stat_editors[s] = stat_edit
+            body.append(stat_edit)
+
+        menu_walker = urwid.SimpleFocusListWalker(body)
+        menu = ListBoxVikeys(menu_walker)
+        urwid.connect_signal(menu_walker, "modified", on_change)
+        super().__init__(menu)
+
+    def keypress(self, key, raw):
+        key = super().keypress(key, raw)
+        if key in ("enter", " ") and self.get_points_remaining() == 0:
+            stats = {
+                stat: editor.value() for (stat, editor) in self.stat_editors.items()
+            }
+            self.callback(stats)
+            return None
+        return key
 
 
 def char_class_desc(cclass):
@@ -177,19 +185,55 @@ def char_class_desc(cclass):
     return text
 
 
-def choose_class():
-    return split_menu(
-        "CHOOSE YOUR CLASS",
-        list(CHAR_CLASSES),
-        display_fn=lambda c: c.value,
-        description_fn=char_class_desc,
-    )
+class Game:
+    def __init__(self):
+        placeholder = urwid.SolidFill()
+        padded = urwid.Padding(placeholder, left=2, right=2)
+        overlay = urwid.Overlay(
+            padded,
+            urwid.SolidFill("\N{MEDIUM SHADE}"),
+            align="center",
+            width=("relative", 80),
+            valign="middle",
+            height=("relative", 80),
+        )
+        self.top = overlay
+        self.player = CharInfo()
+        self.widgets_iter = self.play_linear()
+        self.next_screen()
+
+    def next_screen(self):
+        self.set_main_widget(next(self.widgets_iter))
+
+    def set_main_widget(self, widget):
+        self.top.top_w.original_widget = widget
+
+    def on_class_chosen(self, char_class):
+        self.player.char_class = char_class
+        self.next_screen()
+
+    def on_point_buy_done(self, stats):
+        self.player.stats = stats
+        self.next_screen()
+
+    def play_linear(self):
+        yield SplitMenu(
+            "CHOOSE YOUR CLASS",
+            list(CHAR_CLASSES),
+            display_fn=lambda c: c.value,
+            description_fn=char_class_desc,
+            callback=self.on_class_chosen,
+        )
+
+        yield PointBuy(callback=self.on_point_buy_done)
+
+    def run(self):
+        urwid.MainLoop(self.top, palette=[("reversed", "standout", "")]).run()
 
 
 def main():
-    char_class = choose_class()
-    stats = point_buy()
-    print(char_class, stats)
+    game = Game()
+    game.run()
 
 
 if __name__ == "__main__":
