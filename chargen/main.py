@@ -11,7 +11,7 @@ logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
 class CharInfo:
     def __init__(self):
-        self.stats = {stat: 0 for stat in STATS}
+        self.stats = {}
         self.char_class = None
         self.skills = set()
 
@@ -179,7 +179,10 @@ class PointBuy(urwid.WidgetWrap):
             urwid.connect_signal(stat_edit, "postchange", on_change)
             self.stat_editors[s] = stat_edit
             stat_edit_column.append(stat_edit)
-            stat_bonus_column.append(urwid.Text(f"+{bonuses.get(s, 0)}"))
+            if s in bonuses:
+                stat_bonus_column.append(urwid.Text(f"+{bonuses[s]}"))
+            else:
+                stat_bonus_column.append(urwid.Divider())
         stat_edit_column = urwid.Pile(stat_edit_column)
         stat_bonus_column = urwid.Pile(stat_bonus_column)
         body.append(urwid.Columns([(10, stat_edit_column), stat_bonus_column]))
@@ -205,10 +208,28 @@ def char_class_desc(cclass):
     return " ".join(random.sample(CHAR_CLASS_DESC_FRAGMENTS[cclass], 3))
 
 
+class PlayerDisplay(urwid.WidgetWrap):
+    def __init__(self):
+        self.class_info = urwid.Text("")
+        self.stat_infos = {stat: urwid.Text("") for stat in STATS}
+        pile_contents = [self.class_info]
+        pile_contents.extend([self.stat_infos[stat] for stat in STATS])
+        self.pile = urwid.Pile(pile_contents)
+        super().__init__(urwid.Filler(self.pile, "top"))
+
+    def update(self, char_info):
+        if char_info.char_class is not None:
+            self.class_info.set_text(char_info.char_class.value)
+        for (stat, val) in char_info.stats.items():
+            self.stat_infos[stat].set_text(f"{stat.value}: {val}")
+
+
 class Game:
     def __init__(self):
-        placeholder = urwid.SolidFill()
-        padded = urwid.Padding(placeholder, left=2, right=2)
+        self.main_widget_container = urwid.Padding(urwid.Edit(), left=1, right=1)
+        self.player_display = PlayerDisplay()
+        columns = urwid.Columns([self.main_widget_container, self.player_display])
+        padded = urwid.Padding(columns, left=2, right=2)
         overlay = urwid.Overlay(
             padded,
             urwid.SolidFill("\N{MEDIUM SHADE}"),
@@ -221,12 +242,14 @@ class Game:
         self.player = CharInfo()
         self.widgets_iter = self.play_linear()
         self.next_screen()
-
-    def next_screen(self):
-        self.set_main_widget(next(self.widgets_iter))
+        self.loop = None
 
     def set_main_widget(self, widget):
-        self.top.top_w.original_widget = widget
+        self.main_widget_container.original_widget = widget
+
+    def next_screen(self):
+        self.player_display.update(self.player)
+        self.set_main_widget(next(self.widgets_iter))
 
     def on_class_chosen(self, char_class):
         self.player.char_class = char_class
@@ -263,7 +286,8 @@ class Game:
         )
 
     def run(self):
-        urwid.MainLoop(self.top, palette=[("reversed", "standout", "")]).run()
+        self.loop = urwid.MainLoop(self.top, palette=[("reversed", "standout", "")])
+        self.loop.run()
 
 
 def main():
