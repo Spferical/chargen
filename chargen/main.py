@@ -145,22 +145,30 @@ class PointBuy(urwid.WidgetWrap):
             points_remaining += 10 - val
         return points_remaining
 
-    def __init__(self, callback):
+    def __init__(self, callback, bonuses):
         self.stat_editors = {}
         points_left_text = urwid.Text(f"Points left: {PointBuy.TOTAL_POINTS}")
         self.callback = callback
+        self.bonuses = bonuses
 
-        body = [urwid.Text("CHOOSE YOUR STATS"), urwid.Divider()]
-        body.append(points_left_text)
+        body = [urwid.Text("CHOOSE YOUR STATS"), points_left_text, urwid.Divider()]
 
         def on_change(*args):
             points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
 
+        stat_edit_column = [urwid.Text("STATS")]
+        stat_bonus_column = [urwid.Text("CLASS BONUSES")]
         for s in STATS:
-            stat_edit = IntEditArrows(s.value + "=", 10)
+            stat_edit = IntEditArrows(f"{s.value}: ", 10)
             urwid.connect_signal(stat_edit, "postchange", on_change)
             self.stat_editors[s] = stat_edit
-            body.append(stat_edit)
+            stat_edit_column.append(stat_edit)
+
+            char_class_bonus = bonuses.get(s, 0)
+            stat_bonus_column.append(urwid.Text(f"+{bonuses.get(s, 0)}"))
+        stat_edit_column = urwid.Pile(stat_edit_column)
+        stat_bonus_column = urwid.Pile(stat_bonus_column)
+        body.append(urwid.Columns([(10, stat_edit_column), stat_bonus_column]))
 
         menu_walker = urwid.SimpleFocusListWalker(body)
         menu = ListBoxVikeys(menu_walker)
@@ -171,7 +179,8 @@ class PointBuy(urwid.WidgetWrap):
         key = super().keypress(key, raw)
         if key in ("enter", " ") and self.get_points_remaining() == 0:
             stats = {
-                stat: editor.value() for (stat, editor) in self.stat_editors.items()
+                stat: editor.value() + self.bonuses.get(stat, 0)
+                for (stat, editor) in self.stat_editors.items()
             }
             self.callback(stats)
             return None
@@ -225,7 +234,10 @@ class Game:
             callback=self.on_class_chosen,
         )
 
-        yield PointBuy(callback=self.on_point_buy_done)
+        yield PointBuy(
+            callback=self.on_point_buy_done,
+            bonuses=CHAR_CLASS_STAT_BONUSES[self.player.char_class],
+        )
 
     def run(self):
         urwid.MainLoop(self.top, palette=[("reversed", "standout", "")]).run()
