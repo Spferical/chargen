@@ -135,8 +135,9 @@ HOBBY_DESC_FRAGMENTS = {
     HOBBY.READ: [
         "Go to the library.",
         "Eyes straining under candlelight.",
-        "All you can imagine.",
+        "Only limited by your imagination.",
         "Trains focus.",
+        "Words words words.",
     ],
     HOBBY.BIRDWATCHING: [
         "See the birds.",
