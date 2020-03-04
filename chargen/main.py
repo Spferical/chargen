@@ -11,14 +11,24 @@ logging.basicConfig(filename="chargen.log", level=logging.DEBUG)
 
 class IntEditArrows(urwid.IntEdit):
     def keypress(self, size, key):
-        if key == "right":
+        if key in ("right", "l"):
             self.set_edit_text(str(self.value() + 1))
             self.set_edit_pos(len(self.get_edit_text()))
-        elif key == "left":
+        elif key in ("left", "h"):
             self.set_edit_text(str(self.value() - 1))
             self.set_edit_pos(len(self.get_edit_text()))
         else:
             return super().keypress(size, key)
+
+
+class ListBoxVikeys(urwid.ListBox):
+    def keypress(self, size, key):
+        # hack: translate vikeys into direction keys
+        if key == "j":
+            key = "down"
+        elif key == "k":
+            key = "up"
+        return super().keypress(size, key)
 
 
 class CHAR_CLASSES(Enum):
@@ -99,7 +109,7 @@ def split_menu(title, choices, display_fn=str, description_fn=lambda c: ""):
         urwid.connect_signal(button, "click", item_chosen, c)
         body.append(urwid.AttrMap(button, None, focus_map="reversed"))
     menu = urwid.SimpleFocusListWalker(body)
-    listbox = urwid.ListBox(menu)
+    listbox = ListBoxVikeys(menu)
     right_txt = urwid.Text("")
 
     def on_focus_changed():
@@ -148,7 +158,7 @@ def point_buy():
         stat_editors[s] = stat_edit
         body.append(stat_edit)
     menu_walker = urwid.SimpleFocusListWalker(body)
-    menu = urwid.ListBox(menu_walker)
+    menu = ListBoxVikeys(menu_walker)
 
     def unhandled_input(key):
         if key == "enter" and get_points_remaining() == 0:
