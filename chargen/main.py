@@ -9,9 +9,14 @@ import urwid
 logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
 
+def dice(n, s):
+    """ Rolls NdS """
+    return sum(random.randint(1, s) for _ in range(n))
+
+
 class CharInfo:
     def __init__(self):
-        self.stats = {}
+        self.stats = {stat: 0 for stat in STATS}
         self.char_class = None
         self.skills = set()
 
@@ -112,6 +117,42 @@ SKILL_DESCS = {
 }
 
 
+class HOBBY(Enum):
+    RUN = "Running"
+    READ = "Reading"
+    BIRDWATCHING = "Birdwatching"
+
+
+HOBBY_DESC_FRAGMENTS = {
+    HOBBY.RUN: [
+        "Run like the wind.",
+        "Scout the area.",
+        "Runners' high.",
+        "Feet tough and blackened.",
+        "Strong legs.",
+        "Tough on your joints.",
+    ],
+    HOBBY.READ: [
+        "Go to the library.",
+        "Eyes straining under candlelight.",
+        "All you can imagine.",
+        "Trains focus.",
+    ],
+    HOBBY.BIRDWATCHING: [
+        "See the birds.",
+        "Watch the birds.",
+        "See them fly.",
+        "Quiet in the forest.",
+        "Sounds all around.",
+        "Sit very still.",
+    ],
+}
+
+
+def fragment_desc_getter(fragments, n):
+    return lambda x: " ".join(random.sample(fragments[x], n))
+
+
 class BetterButton(urwid.Button):
     button_left = urwid.Text("-")
     button_right = urwid.Text("")
@@ -204,10 +245,6 @@ class PointBuy(urwid.WidgetWrap):
         return key
 
 
-def char_class_desc(cclass):
-    return " ".join(random.sample(CHAR_CLASS_DESC_FRAGMENTS[cclass], 3))
-
-
 class PlayerDisplay(urwid.WidgetWrap):
     def __init__(self):
         self.class_info = urwid.Text("")
@@ -263,27 +300,88 @@ class Game:
         self.player.skills.add(skill)
         self.next_screen()
 
-    def play_linear(self):
-        yield SplitMenu(
+    def choose_class_menu(self):
+        return SplitMenu(
             "CHOOSE YOUR CLASS",
             list(CHAR_CLASSES),
             display_fn=lambda c: c.value,
-            description_fn=char_class_desc,
+            description_fn=fragment_desc_getter(CHAR_CLASS_DESC_FRAGMENTS, 3),
             callback=self.on_class_chosen,
         )
 
-        yield PointBuy(
+    def point_buy(self):
+        return PointBuy(
             callback=self.on_point_buy_done,
             bonuses=CHAR_CLASS_STAT_BONUSES[self.player.char_class],
         )
 
-        yield SplitMenu(
+    def choose_skill(self):
+        return SplitMenu(
             "CHOOSE A SKILL",
             list(set(SKILLS).difference(self.player.skills)),
             display_fn=lambda c: c.value,
             description_fn=lambda skill: SKILL_DESCS[skill],
             callback=self.on_skill_chosen,
         )
+
+    def on_hobby(self, hobby):
+        self.player.hobby = hobby
+        self.next_screen()
+
+    def choose_hobby(self):
+        return SplitMenu(
+            "CHOOSE AN ACTIVITY",
+            list(HOBBY),
+            description_fn=fragment_desc_getter(HOBBY_DESC_FRAGMENTS, 3),
+            display_fn=lambda c: c.value,
+            callback=self.on_hobby,
+        )
+
+    def make_popup(self, widget):
+        return urwid.Overlay(
+            urwid.LineBox(widget),
+            self.main_widget_container.original_widget,
+            width=("relative", 80),
+            height=("relative", 50),
+            align="center",
+            valign="middle",
+        )
+
+    def popup_message(self, text, callback):
+        text = urwid.Padding(
+            urwid.Filler(urwid.Text(("banner", text), align="center"), valign="top"),
+            left=1,
+            right=1,
+        )
+        ok_button = BetterButton("OK")
+
+        def on_ok(*args):
+            self.close_popup()
+            callback()
+
+        urwid.connect_signal(ok_button, "click", on_ok)
+        ok_button = urwid.AttrMap(ok_button, None, focus_map="reversed")
+        layout = urwid.Frame(text, footer=ok_button, focus_part="footer")
+        return self.make_popup(layout)
+
+    def close_popup(self):
+        self.set_main_widget(self.main_widget_container.original_widget.bottom_w)
+
+    def play_linear(self):
+        yield self.choose_class_menu()
+        yield self.point_buy()
+        yield self.choose_skill()
+        while True:
+            yield self.choose_hobby()
+            if self.player.hobby == HOBBY.RUN:
+                stat = STATS.DEX
+            elif self.player.hobby == HOBBY.READ:
+                stat = STATS.INT
+            elif self.player.hobby == HOBBY.BIRDWATCHING:
+                stat = STATS.WIS
+            bonus = dice(2, 4)
+            self.player.stats[stat] += bonus
+            yield self.popup_message(f"+2d4={bonus} {stat.value}!", self.next_screen)
 
     def run(self):
         self.loop = urwid.MainLoop(self.top, palette=[("reversed", "standout", "")])
