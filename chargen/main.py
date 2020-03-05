@@ -71,7 +71,6 @@ CHAR_CLASS_STAT_BONUSES = {
     CHAR_CLASSES.CLERIC: {STATS.WIS: 2, STATS.CON: 2, STATS.LUC: 2},
 }
 
-
 CHAR_CLASS_DESC_FRAGMENTS = {
     CHAR_CLASSES.FIGHTING_MAN: [
         "Fight.",
@@ -131,11 +130,23 @@ SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
 }
 
+SKILL_STAT_PREREQS = {
+    SKILLS.READ: {STATS.INT: 5},
+    SKILLS.WRITE: {STATS.INT: 10},
+    SKILLS.JUMP: {STATS.STR: 10},
+    SKILLS.CLIMB: {STATS.STR: 15},
+}
+
 
 def get_skill_desc(skill):
     desc = SKILL_DESCS[skill]
     if skill in SKILL_PREREQS:
         desc += f'\n\nPrereqs: {", ".join(s.value for s in SKILL_PREREQS[skill])}'
+    if skill in SKILL_STAT_PREREQS:
+        desc += "\n\nRequired stats:"
+        for stat in SKILL_STAT_PREREQS[skill]:
+            desc += f"\n    {SKILL_STAT_PREREQS[skill][stat]} {stat.value}"
+
     return desc
 
 
@@ -346,15 +357,22 @@ class Game:
             bonuses=CHAR_CLASS_STAT_BONUSES[self.player.char_class],
         )
 
+    def player_can_choose_skill(self, skill):
+        skill_prereqs = SKILL_PREREQS.get(skill, {})
+        if not self.player.skills.issuperset(skill_prereqs):
+            return False
+        stat_prereqs = SKILL_STAT_PREREQS.get(skill, {})
+        if any(self.player.stats[stat] < req for (stat, req) in stat_prereqs.items()):
+            return False
+        return True
+
     def choose_skill(self):
         return SplitMenu(
             "CHOOSE A SKILL",
             list(set(SKILLS).difference(self.player.skills)),
             display_fn=lambda c: c.value,
             description_fn=get_skill_desc,
-            is_enabled_fn=lambda skill: self.player.skills.issuperset(
-                SKILL_PREREQS.get(skill, {})
-            ),
+            is_enabled_fn=self.player_can_choose_skill,
             callback=self.on_skill_chosen,
         )
 
