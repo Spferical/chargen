@@ -450,15 +450,24 @@ class Game:
         yield self.choose_skill()
         while True:
             yield self.choose_hobby()
-            if self.player.hobby == HOBBY.RUN:
-                stat = STATS.DEX
-            elif self.player.hobby == HOBBY.READ:
-                stat = STATS.INT
-            elif self.player.hobby == HOBBY.BIRDWATCHING:
-                stat = STATS.WIS
-            bonus = self.dice(1, 4)
-            self.player.stats[stat] += bonus
-            yield self.popup_message(f"+1d4={bonus} {stat.value}!", self.next_screen)
+            if (
+                self.player.hobby == HOBBY.READ
+                and SKILLS.READ not in self.player.skills
+            ):
+                yield self.popup_message(
+                    "You don't know how to read!", self.next_screen,
+                )
+            else:
+                stat = {
+                    HOBBY.RUN: STATS.DEX,
+                    HOBBY.READ: STATS.INT,
+                    HOBBY.BIRDWATCHING: STATS.WIS,
+                }[self.player.hobby]
+                bonus = self.dice(1, 4)
+                self.player.stats[stat] += bonus
+                yield self.popup_message(
+                    f"+1d4={bonus} {stat.value}!", self.next_screen
+                )
 
             self.player.age += 1
             if self.player.age > 5:
