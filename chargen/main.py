@@ -9,6 +9,12 @@ import urwid
 logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
 
+PALETTE = [
+    ("disabled", "dark gray", ""),
+    ("reversed", "standout", ""),
+]
+
+
 def dice(n, s):
     """ Rolls NdS """
     return sum(random.randint(1, s) for _ in range(n))
@@ -59,11 +65,6 @@ class STATS(Enum):
     LUC = "LUC"
 
 
-class SKILLS(Enum):
-    JUMP = "Jumping"
-    CLIMB = "Climbing"
-
-
 CHAR_CLASS_STAT_BONUSES = {
     CHAR_CLASSES.FIGHTING_MAN: {STATS.STR: 2, STATS.DEX: 2, STATS.CON: 2},
     CHAR_CLASSES.MAGIC_USER: {STATS.INT: 2, STATS.CHA: 2, STATS.DEX: 2},
@@ -110,11 +111,32 @@ CHAR_CLASS_DESC_FRAGMENTS = {
 }
 
 
+class SKILLS(Enum):
+    JUMP = "Jumping"
+    CLIMB = "Climbing"
+    READ = "Decipher Runes"
+    WRITE = "Runic Composition"
+
+
 SKILL_DESCS = {
     SKILLS.JUMP: "You can jump very high. Gives +5 on jump height rolls.",
     SKILLS.CLIMB: "You can scale ropes, trees, walls, and more with ease."
-    "Adds a d12 to rolls involving scaling obstacles.",
+    " Adds a d12 to rolls involving scaling obstacles.",
+    SKILLS.READ: "Parse the secrets scrawled onto walls and other places.",
+    SKILLS.WRITE: "Store your mystical secrets for later."
+    " Necessary for the creation of magical scrolls.",
 }
+
+SKILL_PREREQS = {
+    SKILLS.WRITE: [SKILLS.READ],
+}
+
+
+def get_skill_desc(skill):
+    desc = SKILL_DESCS[skill]
+    if skill in SKILL_PREREQS:
+        desc += f'\n\nPrereqs: {", ".join(s.value for s in SKILL_PREREQS[skill])}'
+    return desc
 
 
 class HOBBY(Enum):
@@ -166,6 +188,7 @@ class SplitMenu(urwid.WidgetWrap):
         choices,
         display_fn=str,
         description_fn=lambda c: "",
+        is_enabled_fn=lambda c: True,
         callback=lambda c: None,
     ):
         body = [urwid.Text(title), urwid.Divider()]
@@ -173,9 +196,13 @@ class SplitMenu(urwid.WidgetWrap):
         def item_chosen(button, choice):
             callback(choice)
 
+        choices = sorted(choices, key=is_enabled_fn, reverse=True)
         for c in choices:
-            button = BetterButton(display_fn(c))
-            urwid.connect_signal(button, "click", item_chosen, c)
+            if is_enabled_fn(c):
+                button = BetterButton(display_fn(c))
+                urwid.connect_signal(button, "click", item_chosen, c)
+            else:
+                button = BetterButton(("disabled", display_fn(c)))
             body.append(urwid.AttrMap(button, None, focus_map="reversed"))
         menu = urwid.SimpleFocusListWalker(body)
         listbox = ListBoxVikeys(menu)
@@ -324,7 +351,10 @@ class Game:
             "CHOOSE A SKILL",
             list(set(SKILLS).difference(self.player.skills)),
             display_fn=lambda c: c.value,
-            description_fn=lambda skill: SKILL_DESCS[skill],
+            description_fn=get_skill_desc,
+            is_enabled_fn=lambda skill: self.player.skills.issuperset(
+                SKILL_PREREQS.get(skill, {})
+            ),
             callback=self.on_skill_chosen,
         )
 
@@ -375,6 +405,7 @@ class Game:
         yield self.choose_class_menu()
         yield self.point_buy()
         yield self.choose_skill()
+        yield self.choose_skill()
         year = 1
         while True:
             yield self.choose_hobby()
@@ -404,7 +435,7 @@ class Game:
         return self.popup_message(msg, self.next_screen)
 
     def run(self):
-        self.loop = urwid.MainLoop(self.top, palette=[("reversed", "standout", "")])
+        self.loop = urwid.MainLoop(self.top, palette=PALETTE)
         self.loop.run()
 
 
