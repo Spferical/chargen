@@ -15,11 +15,6 @@ PALETTE = [
 ]
 
 
-def dice(n, s):
-    """ Rolls NdS """
-    return sum(random.randint(1, s) for _ in range(n))
-
-
 class CharInfo:
     def __init__(self):
         self.stats = {stat: 0 for stat in STATS}
@@ -115,6 +110,7 @@ class SKILLS(Enum):
     CLIMB = "Climbing"
     READ = "Decipher Runes"
     WRITE = "Runic Composition"
+    CLOVER = "Four-Leaf Clover"
 
 
 SKILL_DESCS = {
@@ -124,6 +120,7 @@ SKILL_DESCS = {
     SKILLS.READ: "Parse the secrets scrawled onto walls and other places.",
     SKILLS.WRITE: "Store your mystical secrets for later."
     " Necessary for the creation of magical scrolls.",
+    SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
 }
 
 SKILL_PREREQS = {
@@ -135,6 +132,7 @@ SKILL_STAT_PREREQS = {
     SKILLS.WRITE: {STATS.INT: 10},
     SKILLS.JUMP: {STATS.STR: 10},
     SKILLS.CLIMB: {STATS.STR: 15},
+    SKILLS.CLOVER: {STATS.LUC: 20},
 }
 
 
@@ -323,6 +321,12 @@ class Game:
         self.next_screen()
         self.loop = None
 
+    def dice(self, n, s):
+        """ Rolls NdS """
+        if SKILLS.CLOVER in self.player.skills and s == 4:
+            s = 8
+        return sum(random.randint(1, s) for _ in range(n))
+
     def set_main_widget(self, widget):
         self.main_widget_container.original_widget = widget
 
@@ -433,7 +437,7 @@ class Game:
                 stat = STATS.INT
             elif self.player.hobby == HOBBY.BIRDWATCHING:
                 stat = STATS.WIS
-            bonus = dice(1, 4)
+            bonus = self.dice(1, 4)
             self.player.stats[stat] += bonus
             yield self.popup_message(f"+1d4={bonus} {stat.value}!", self.next_screen)
 
@@ -447,7 +451,7 @@ class Game:
 
     def aging_check(self):
         msg = "TIME TAKES ITS TOLL"
-        con_debuff = dice(2, 4)
+        con_debuff = self.dice(2, 4)
         self.player.stats[STATS.CON] -= con_debuff
         msg += f"\n\n-2d4=-{con_debuff} CON"
         return self.popup_message(msg, self.next_screen)
