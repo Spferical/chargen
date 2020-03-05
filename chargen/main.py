@@ -20,6 +20,17 @@ class CharInfo:
         self.stats = {stat: 0 for stat in STATS}
         self.char_class = None
         self.skills = set()
+        self.age = 0
+
+    def __repr__(self):
+        return (
+            "CharInfo("
+            f"stats: {self.stats}"
+            f"class: {self.char_class}"
+            f"skills: {self.skills}"
+            f"age: {self.age}"
+            ")"
+        )
 
 
 class IntEditArrows(urwid.IntEdit):
@@ -111,6 +122,7 @@ class SKILLS(Enum):
     READ = "Decipher Runes"
     WRITE = "Runic Composition"
     CLOVER = "Four-Leaf Clover"
+    TIME = "Celestial Lore"
 
 
 SKILL_DESCS = {
@@ -121,6 +133,7 @@ SKILL_DESCS = {
     SKILLS.WRITE: "Store your mystical secrets for later."
     " Necessary for the creation of magical scrolls.",
     SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
+    SKILLS.TIME: "Knowledge behind the motion of celestial bodies.",
 }
 
 SKILL_PREREQS = {
@@ -286,19 +299,24 @@ class PointBuy(urwid.WidgetWrap):
 
 class PlayerDisplay(urwid.WidgetWrap):
     def __init__(self):
-        self.class_info = urwid.Text("")
-        self.stat_infos = {stat: urwid.Text("") for stat in STATS}
+        self.class_info = urwid.Text("??")
+        self.stat_infos = {stat: urwid.Text("??") for stat in STATS}
         pile_contents = [self.class_info]
         pile_contents.extend([self.stat_infos[stat] for stat in STATS])
+        self.age_text = urwid.Text("??")
+        pile_contents.append(self.age_text)
         self.pile = urwid.Pile(pile_contents)
         super().__init__(urwid.Filler(self.pile, "top"))
 
     def update(self, char_info):
+        logging.debug(f"Displaying char info {repr(char_info)}")
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
         if any(val != 0 for val in char_info.stats.values()):  # ignore if all zeros
             for (stat, val) in char_info.stats.items():
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
+        if SKILLS.TIME in char_info.skills:
+            self.age_text.set_text(str(char_info.age))
 
 
 class Game:
@@ -426,9 +444,10 @@ class Game:
     def play_linear(self):
         yield self.choose_class_menu()
         yield self.point_buy()
+        self.player.age += 1
         yield self.choose_skill()
+        self.player.age += 1
         yield self.choose_skill()
-        year = 1
         while True:
             yield self.choose_hobby()
             if self.player.hobby == HOBBY.RUN:
@@ -441,8 +460,8 @@ class Game:
             self.player.stats[stat] += bonus
             yield self.popup_message(f"+1d4={bonus} {stat.value}!", self.next_screen)
 
-            year += 1
-            if year > 5:
+            self.player.age += 1
+            if self.player.age > 5:
                 yield self.aging_check()
             if self.player.stats[STATS.CON] <= 0:
                 yield self.popup_message("YOU DIE", self.next_screen)
