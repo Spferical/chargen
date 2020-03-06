@@ -423,7 +423,7 @@ class Game:
 
     def popup_message(self, text, callback):
         text = urwid.Padding(
-            urwid.Filler(urwid.Text(("banner", text), align="center"), valign="top"),
+            urwid.Filler(urwid.Text(text, align="center"), valign="top"),
             left=1,
             right=1,
         )
