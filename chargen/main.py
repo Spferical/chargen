@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import namedtuple
 from enum import Enum
 import random
 import logging
@@ -69,7 +70,18 @@ class STATS(Enum):
     WIS = "WIS"
     CHA = "CHA"
     LUC = "LUC"
+    MON = "$$$"
 
+
+POINT_BUY_STATS = [
+    STATS.STR,
+    STATS.DEX,
+    STATS.CON,
+    STATS.INT,
+    STATS.WIS,
+    STATS.CHA,
+    STATS.LUC,
+]
 
 CHAR_CLASS_STAT_BONUSES = {
     CHAR_CLASSES.FIGHTING_MAN: {STATS.STR: 2, STATS.DEX: 2, STATS.CON: 2},
@@ -123,6 +135,7 @@ class SKILLS(Enum):
     WRITE = "Runic Composition"
     CLOVER = "Four-Leaf Clover"
     TIME = "Celestial Lore"
+    HERBOLOGY = "Herbology"
 
 
 SKILL_DESCS = {
@@ -134,6 +147,7 @@ SKILL_DESCS = {
     " Necessary for the creation of magical scrolls.",
     SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
     SKILLS.TIME: "Knowledge behind the motion of celestial bodies.",
+    SKILLS.HERBOLOGY: "Ability to grow and nurture plants.",
 }
 
 SKILL_PREREQS = {
@@ -193,6 +207,44 @@ HOBBY_DESC_FRAGMENTS = {
     ],
 }
 
+StatCheck = namedtuple("StatCheck", ["stat", "num_dice", "sides", "dc"])
+
+Event = namedtuple("Event", ["desc", "choices"])
+EventChoice = namedtuple(
+    "EventChoice", ["name", "skill_reqs", "checks", "success", "failure"]
+)
+EventResult = namedtuple("EventResult", ["desc", "stat_mods"])
+
+EVENTS = [
+    Event(
+        desc="You're hungry. What do you do?",
+        choices=[
+            EventChoice(
+                name="Buy bread",
+                skill_reqs=set(),
+                checks=[StatCheck(STATS.MON, num_dice=0, sides=4, dc=1)],
+                success=EventResult(
+                    desc="You buy and eat bread.", stat_mods={STATS.MON: -1}
+                ),
+                failure=EventResult(
+                    desc="You have no money!", stat_mods={STATS.CON: -1}
+                ),
+            ),
+            EventChoice(
+                name="Grow bread",
+                skill_reqs={SKILLS.HERBOLOGY},
+                checks=(),
+                success=EventResult(
+                    desc="You grab a piece of bread off of your bread tree."
+                    " You sell the extra bread!",
+                    stat_mods={STATS.MON: +5},
+                ),
+                failure=None,
+            ),
+        ],
+    )
+]
+
 
 def fragment_desc_getter(fragments, n):
     return lambda x: " ".join(random.sample(fragments[x], n))
@@ -247,7 +299,7 @@ class PointBuy(urwid.WidgetWrap):
 
     def get_points_remaining(self):
         points_remaining = PointBuy.TOTAL_POINTS
-        for stat in STATS:
+        for stat in POINT_BUY_STATS:
             val = self.stat_editors[stat].value()
             points_remaining -= min(val, 16) - 10
             if val > 16:
@@ -267,7 +319,7 @@ class PointBuy(urwid.WidgetWrap):
 
         stat_edit_column = [urwid.Text("STATS")]
         stat_bonus_column = [urwid.Text("CLASS BONUSES")]
-        for s in STATS:
+        for s in POINT_BUY_STATS:
             stat_edit = IntEditArrows(f"{s.value}: ", 10)
             urwid.connect_signal(stat_edit, "postchange", on_change)
             self.stat_editors[s] = stat_edit
@@ -306,14 +358,17 @@ class PlayerDisplay(urwid.WidgetWrap):
         self.age_text = urwid.Text("??")
         pile_contents.append(self.age_text)
         self.pile = urwid.Pile(pile_contents)
+        self.revealed_stats = set()
         super().__init__(urwid.Filler(self.pile, "top"))
 
     def update(self, char_info):
         logging.debug(f"Displaying char info {repr(char_info)}")
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
-        if any(val != 0 for val in char_info.stats.values()):  # ignore if all zeros
-            for (stat, val) in char_info.stats.items():
+        for (stat, val) in char_info.stats.items():
+            if val != 0:
+                self.revealed_stats.add(stat)
+            if stat in self.revealed_stats:
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
         if SKILLS.TIME in char_info.skills:
             self.age_text.set_text(str(char_info.age))
@@ -335,6 +390,7 @@ class Game:
         )
         self.top = overlay
         self.player = CharInfo()
+        self.seen_events = set()
         self.widgets_iter = self.play_linear()
         self.next_screen()
         self.loop = None
@@ -357,7 +413,8 @@ class Game:
         self.next_screen()
 
     def on_point_buy_done(self, stats):
-        self.player.stats = stats
+        for (stat, val) in stats.items():
+            self.player.stats[stat] = val
         self.next_screen()
 
     def on_skill_chosen(self, skill):
@@ -441,6 +498,76 @@ class Game:
     def close_popup(self):
         self.set_main_widget(self.main_widget_container.original_widget.bottom_w)
 
+    def roll_stat_check(self, stat, num_dice, sides):
+        return self.player.stats[stat] + self.dice(num_dice, sides)
+
+    def play_random_event(self):
+        events = list(filter((lambda e: e.desc not in self.seen_events), EVENTS))
+        if not events:
+            logging.warning("Ran out of random events")
+            return
+        event = random.choice(events)
+        self.seen_events.add(event.desc)
+        choice = None
+
+        def on_choice(selected):
+            nonlocal choice
+            choice = selected
+            self.next_screen()
+
+        def player_has_skill_prereqs(choice):
+            return self.player.skills.issuperset(choice.skill_reqs)
+
+        def description_fn(choice):
+            desc = ""
+            if choice.skill_reqs:
+                desc += "Required skills:\n"
+            for skill in choice.skill_reqs:
+                desc += f" {skill.value}"
+            return desc
+
+        yield SplitMenu(
+            event.desc,
+            event.choices,
+            description_fn=description_fn,
+            display_fn=lambda choice: choice.name,
+            is_enabled_fn=player_has_skill_prereqs,
+            callback=on_choice,
+        )
+        assert choice is not None
+        overall_success = True
+        msg = ""
+        if choice.checks:
+            for stat_check in choice.checks:
+                (stat, num_dice, sides, dc) = stat_check
+                total = self.roll_stat_check(stat, num_dice, sides)
+                check_success = total >= dc
+                if not check_success:
+                    overall_success = False
+                msg += f'{"SUCCESS" if check_success else "FAILURE"}'
+                msg += f" {num_dice}d{dc} + {stat.value} = {total} vs {dc}\n\n"
+        result = choice.success if overall_success else choice.failure
+        msg += result.desc
+        for (stat, mod) in result.stat_mods.items():
+            msg += f"\n {mod:+} {stat}"
+        yield self.popup_message(msg, self.next_screen)
+
+    def play_hobby(self):
+        yield self.choose_hobby()
+        if self.player.hobby == HOBBY.READ and SKILLS.READ not in self.player.skills:
+            yield self.popup_message(
+                "You don't know how to read!", self.next_screen,
+            )
+        else:
+            stat = {
+                HOBBY.RUN: STATS.DEX,
+                HOBBY.READ: STATS.INT,
+                HOBBY.BIRDWATCHING: STATS.WIS,
+            }[self.player.hobby]
+            bonus = self.dice(1, 4)
+            self.player.stats[stat] += bonus
+            yield self.popup_message(f"+1d4={bonus} {stat.value}!", self.next_screen)
+
     def play_linear(self):
         yield self.choose_class_menu()
         yield self.point_buy()
@@ -448,27 +575,9 @@ class Game:
         yield self.choose_skill()
         self.player.age += 1
         yield self.choose_skill()
+        yield from self.play_hobby()
         while True:
-            yield self.choose_hobby()
-            if (
-                self.player.hobby == HOBBY.READ
-                and SKILLS.READ not in self.player.skills
-            ):
-                yield self.popup_message(
-                    "You don't know how to read!", self.next_screen,
-                )
-            else:
-                stat = {
-                    HOBBY.RUN: STATS.DEX,
-                    HOBBY.READ: STATS.INT,
-                    HOBBY.BIRDWATCHING: STATS.WIS,
-                }[self.player.hobby]
-                bonus = self.dice(1, 4)
-                self.player.stats[stat] += bonus
-                yield self.popup_message(
-                    f"+1d4={bonus} {stat.value}!", self.next_screen
-                )
-
+            yield from self.play_random_event()
             self.player.age += 1
             if self.player.age > 5:
                 yield self.aging_check()
