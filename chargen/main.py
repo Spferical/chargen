@@ -253,7 +253,7 @@ EVENTS = [
                 success=EventResult(
                     desc="It's fascinating.", stat_mods={STATS.INT: +2}
                 ),
-                failure=EventResult(desc="It's hard to understand.", stat_mods={}),
+                failure=EventResult(desc="It's too hard to understand.", stat_mods={}),
             ),
             EventChoice(
                 name="Splash in puddles",
@@ -272,6 +272,35 @@ EVENTS = [
                 failure=EventResult(
                     desc="Nothing happens.", stat_mods={STATS.WIS: +1},
                 ),
+            ),
+        ],
+    ),
+    Event(
+        desc="Leaves for dinner.",
+        choices=[
+            EventChoice(
+                name="Eat the green crap.",
+                skill_reqs=set(),
+                checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
+                success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
+                failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
+            ),
+            EventChoice(
+                name="Pretend to eat it.",
+                skill_reqs={},
+                checks=[StatCheck(STATS.DEX, 1, 20, 22)],
+                success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
+                failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
+            ),
+            EventChoice(
+                name="Run away from home.",
+                skill_reqs={},
+                checks=[StatCheck(STATS.DEX, 1, 20, 30)],
+                success=EventResult(
+                    desc="You live on your own.",
+                    stat_mods={STATS.WIS: +2, STATS.DEX: +2, STATS.CON: +2},
+                ),
+                failure=EventResult(desc="", stat_mods={},),
             ),
         ],
     ),
@@ -509,8 +538,8 @@ class Game:
         return urwid.Overlay(
             urwid.LineBox(widget),
             self.main_widget_container.original_widget,
-            width=("relative", 80),
-            height=("relative", 50),
+            width=("relative", 100),
+            height=("relative", 70),
             align="center",
             valign="middle",
         )
@@ -582,11 +611,11 @@ class Game:
                 if not check_success:
                     overall_success = False
                 msg += f'{"SUCCESS" if check_success else "FAILURE"}'
-                msg += f" {num_dice}d{dc} + {stat.value} = {total} vs {dc}\n\n"
+                msg += f" {num_dice}d{sides} + {stat.value} = {total} vs {dc}\n\n"
         result = choice.success if overall_success else choice.failure
         msg += result.desc
         for (stat, mod) in result.stat_mods.items():
-            msg += f"\n {mod:+} {stat.value}"
+            msg += f" {mod:+} {stat.value}"
         yield self.popup_message(msg, self.next_screen)
 
     def play_hobby(self):
