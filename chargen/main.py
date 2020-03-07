@@ -217,7 +217,7 @@ EventResult = namedtuple("EventResult", ["desc", "stat_mods"])
 
 EVENTS = [
     Event(
-        desc="You're hungry. What do you do?",
+        desc="You're hungry.",
         choices=[
             EventChoice(
                 name="Buy bread",
@@ -242,7 +242,39 @@ EVENTS = [
                 failure=None,
             ),
         ],
-    )
+    ),
+    Event(
+        desc="It's raining outside.",
+        choices=[
+            EventChoice(
+                name="Read a book",
+                skill_reqs={SKILLS.READ},
+                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=20)],
+                success=EventResult(
+                    desc="It's fascinating.", stat_mods={STATS.INT: +2}
+                ),
+                failure=EventResult(desc="It's hard to understand.", stat_mods={}),
+            ),
+            EventChoice(
+                name="Splash in puddles",
+                skill_reqs={},
+                checks=[StatCheck(STATS.CON, 1, 20, 20)],
+                success=EventResult(desc="", stat_mods={STATS.WIS: +2},),
+                failure=EventResult(
+                    desc="You catch a cold.", stat_mods={STATS.CON: -2},
+                ),
+            ),
+            EventChoice(
+                name="Conduct a sun ritual",
+                skill_reqs={},
+                checks=[StatCheck(STATS.WIS, 1, 20, 20)],
+                success=EventResult(desc="The rain slows.", stat_mods={STATS.WIS: +2},),
+                failure=EventResult(
+                    desc="Nothing happens.", stat_mods={STATS.WIS: +1},
+                ),
+            ),
+        ],
+    ),
 ]
 
 
@@ -554,7 +586,7 @@ class Game:
         result = choice.success if overall_success else choice.failure
         msg += result.desc
         for (stat, mod) in result.stat_mods.items():
-            msg += f"\n {mod:+} {stat}"
+            msg += f"\n {mod:+} {stat.value}"
         yield self.popup_message(msg, self.next_screen)
 
     def play_hobby(self):
