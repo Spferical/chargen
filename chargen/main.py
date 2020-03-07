@@ -357,6 +357,8 @@ class PlayerDisplay(urwid.WidgetWrap):
         pile_contents.extend([self.stat_infos[stat] for stat in STATS])
         self.age_text = urwid.Text("??")
         pile_contents.append(self.age_text)
+        self.skill_pile = urwid.Pile([])
+        pile_contents.append(self.skill_pile)
         self.pile = urwid.Pile(pile_contents)
         self.revealed_stats = set()
         super().__init__(urwid.Filler(self.pile, "top"))
@@ -372,6 +374,9 @@ class PlayerDisplay(urwid.WidgetWrap):
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
         if SKILLS.TIME in char_info.skills:
             self.age_text.set_text(str(char_info.age))
+        self.skill_pile.contents.clear()
+        for skill in sorted(char_info.skills, key=lambda s: s.value):
+            self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
 
 
 class Game:
