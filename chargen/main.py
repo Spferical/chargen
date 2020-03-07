@@ -13,6 +13,7 @@ logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 PALETTE = [
     ("disabled", "dark gray", ""),
     ("reversed", "standout", ""),
+    ("warn", "dark red", ""),
 ]
 
 
@@ -280,21 +281,21 @@ EVENTS = [
         choices=[
             EventChoice(
                 name="Eat the green crap.",
-                skill_reqs=set(),
+                skill_reqs=[],
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
                 success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
                 failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
             ),
             EventChoice(
                 name="Pretend to eat it.",
-                skill_reqs={},
+                skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 22)],
                 success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
             ),
             EventChoice(
                 name="Run away from home.",
-                skill_reqs={},
+                skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 30)],
                 success=EventResult(
                     desc="You live on your own.",
@@ -370,10 +371,16 @@ class PointBuy(urwid.WidgetWrap):
     def __init__(self, callback, bonuses):
         self.stat_editors = {}
         points_left_text = urwid.Text(f"Points left: {PointBuy.TOTAL_POINTS}")
+        self.warning_text = urwid.Text("")
         self.callback = callback
         self.bonuses = bonuses
 
-        body = [urwid.Text("CHOOSE YOUR STATS"), points_left_text, urwid.Divider()]
+        body = [
+            urwid.Text("CHOOSE YOUR STATS"),
+            points_left_text,
+            self.warning_text,
+            urwid.Divider(),
+        ]
 
         def on_change(*args):
             points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
@@ -400,7 +407,14 @@ class PointBuy(urwid.WidgetWrap):
 
     def keypress(self, key, raw):
         key = super().keypress(key, raw)
-        if key in ("enter", " ") and self.get_points_remaining() == 0:
+        if any(editor.value() <= 0 for editor in self.stat_editors.values()):
+            self.warning_text.set_text(("warn", "Stats must be above zero"))
+        else:
+            self.warning_text.set_text("")
+        if key in ("enter", " "):
+            if self.get_points_remaining() != 0:
+                self.warning_text.set_text(("warn", "Must have zero points remaining."))
+                return
             stats = {
                 stat: editor.value() + self.bonuses.get(stat, 0)
                 for (stat, editor) in self.stat_editors.items()
