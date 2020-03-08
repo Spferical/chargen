@@ -252,8 +252,9 @@ StatCheck = namedtuple("StatCheck", ["stat", "num_dice", "sides", "dc"])
 
 
 class Event:
-    def __init__(self, desc, choices, prereq_fn=lambda player: True):
+    def __init__(self, desc, choices, age_req=None, prereq_fn=lambda player: True):
         self.desc = desc
+        self.age_req = age_req
         self.choices = choices
         self.prereq_fn = prereq_fn
 
@@ -617,6 +618,7 @@ class Game:
         )
         self.top = overlay
         self.player = CharInfo()
+        self.mandatory_events = {}
         self.seen_events = set()
         self.widgets_iter = self.play_linear()
         self.next_screen()
@@ -774,6 +776,25 @@ class Game:
         (name, _) = random.choice(events)
         yield from self.play_event(name)
 
+    def play_mandatory_event(self):
+        required_events = [
+            name
+            for (name, event) in self.mandatory_events[self.player.stats[STATS.AGE]]
+            if event.prereq_fn(self.player)
+        ]
+
+        if len(required_events) > 0:
+            rand_idx = random.randint(0, len(required_events) - 1)
+            yield from self.play_event(required_events[rand_idx])
+            del required_events[rand_idx]
+
+    def create_mandatory_event_table(self):
+        for name, event in EVENTS.items():
+            if event.age_req is not None:
+                self.mandatory_events.setdefault(event.age_req, []).append(
+                    (name, event)
+                )
+
     def play_event(self, event_name):
         logging.info(f"Triggered {event_name} event")
         self.seen_events.add(event_name)
@@ -845,6 +866,7 @@ class Game:
 
     def play_linear(self):
         yield self.choose_class_menu()
+        self.create_mandatory_event_table()
         yield self.point_buy()
         self.player.stats[STATS.AGE] += 1
         yield from self.choose_skill()
@@ -852,7 +874,12 @@ class Game:
         yield from self.choose_skill()
         yield from self.play_hobby()
         while True:
-            yield from self.play_random_event()
+            if self.player.stats[STATS.AGE] in self.mandatory_events:
+                logging.info("performing mandatory event")
+                yield from self.play_mandatory_event()
+                continue
+            else:
+                yield from self.play_random_event()
             yield from self.choose_skill()
             self.player.stats[STATS.AGE] += 1
             if self.player.stats[STATS.AGE] > 5:
