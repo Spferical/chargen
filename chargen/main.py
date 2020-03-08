@@ -677,6 +677,8 @@ class GameOver(urwid.WidgetWrap):
         if key == "enter":
             if not self.saved:
                 name = self.name_edit.get_edit_text()
+                if not name:
+                    return True
                 save(name, self.player)
                 self.saved = True
                 self.saved_text.set_text([("green", "SAVED"), f" as {name}"])
