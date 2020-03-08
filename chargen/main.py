@@ -791,8 +791,8 @@ EVENTS = {
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
-                    desc="The numbers confound you. You are unable to answer"
-                    " most of the questions.",
+                    desc="You fail to decipher the runes. You are"
+                    " unable to answer most of the questions.",
                     stat_mods={},
                 ),
             ),
@@ -818,13 +818,98 @@ EVENTS = {
             EventChoice(
                 name="Guess randomly.",
                 skill_reqs=[],
-                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=45)],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=38)],
                 success=EventResult(
                     desc="You somehow manage to correctly guess the answers to"
                     " all 40 multiple-choice questions on the exam. You feel"
                     " that the random number god is displeased with you.",
                     stat_mods={STATS.LUC: 1},
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="You guess the answers to most of the questions."
+                    " Your performance is comparable to a randomly-guessing"
+                    " monkey.",
+                    stat_mods={STATS.REP: -1},
+                ),
+            ),
+        ],
+    ),
+    "exam_2": Event(
+        age_req=18,
+        desc="You return to the proving grounds. It is once again time to"
+        " demonstrate your potential to the village elders. You steady your"
+        " breathing, and raise your quill.",
+        choices=[
+            EventChoice(
+                name="Focus on the math problems.",
+                skill_reqs=[SKILLS.NUMEROLOGY_3],
+                checks=[
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=18),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
+                ],
+                success=EventResult(
+                    desc="Arithmancy has always been your strength. You pass"
+                    " the trials with flying colors.",
+                    stat_mods={STATS.INT: 2},
+                    skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="The numbers confound you. You are unable to answer"
+                    " most of the questions.",
+                    stat_mods={},
+                ),
+            ),
+            EventChoice(
+                name="Focus on the reading comprehension questions.",
+                skill_reqs=[SKILLS.DETECTIVE,
+                            SKILLS.IDENTIFY],
+                checks=[
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=18),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
+                ],
+                success=EventResult(
+                    desc="You decipher the runes with ease. You pass"
+                    " the trials with flying colors",
+                    stat_mods={STATS.INT: 2},
+                    skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="You fail to decipher the runes. You are"
+                    " unable to answer most of the questions.",
+                    stat_mods={},
+                ),
+            ),
+            EventChoice(
+                name="Focus on the oral examination.",
+                skill_reqs=[SKILLS.COMMUNICATION_2,
+                            SKILLS.IDENTIFY],
+                checks=[
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=19),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
+                ],
+                success=EventResult(
+                    desc="You give an oral presentation. You pass the"
+                    " trials with flying colors.",
+                    stat_mods={STATS.INT: 1, STATS.CHA: 1},
+                    skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="You stammer and fumble over your words. You are"
+                    " unable to answer most of the questions",
+                    stat_mods={},
+                ),
+            ),
+            EventChoice(
+                name="Guess randomly.",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=45)],
+                success=EventResult(
+                    desc="You somehow manage to correctly guess the answers to"
+                    " all 80 multiple-choice questions on the exam. You feel"
+                    " that the random number god is displeased with you.",
+                    stat_mods={STATS.LUC: 1},
+                    skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
                     desc="You guess the answers to most of the questions."
