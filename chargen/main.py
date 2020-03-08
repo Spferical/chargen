@@ -815,6 +815,24 @@ EVENTS = {
                     stat_mods={},
                 ),
             ),
+            EventChoice(
+                name="Guess randomly.",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=45)],
+                success=EventResult(
+                    desc="You somehow manage to correctly guess the answers to"
+                    " all 40 multiple-choice questions on the exam. You feel"
+                    " that the random number god is displeased with you.",
+                    stat_mods={STATS.LUC: 1},
+                    skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="You guess the answers to most of the questions."
+                    " Your performance is comparable to a randomly-guessing"
+                    " monkey.",
+                    stat_mods={STATS.REP: -1},
+                ),
+            ),
         ],
     ),
     "pet": Event(
