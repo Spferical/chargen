@@ -592,7 +592,7 @@ EVENTS = {
             EventChoice(
                 name="Pick up the phone.",
                 skill_reqs=[SKILLS.COMMUNICATION_1],
-                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=25),],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=25)],
                 success=EventResult(
                     desc="You have a delightful conversation with a telemarketer."
                     " You discover that both of you have a shared love of lemon"
@@ -945,8 +945,7 @@ EVENTS = {
         ],
     ),
     "faire": Event(
-        prereq_fn=lambda player: player.stats[STATS.AGE] > 15
-        and player.stats[STATS.MON] >= 1,
+        prereq_fn=lambda player: player.stats[STATS.AGE] > 15,
         desc="Lights and sounds are all around you at the sun festival!",
         choices=[
             EventChoice(
@@ -972,6 +971,16 @@ EVENTS = {
                 checks=[StatCheck(STATS.LUC, num_dice=1, sides=100, dc=50)],
                 success=EventResult(stat_mods={STATS.MON: 1, STATS.PTS: 1}),
                 failure=EventResult(stat_mods={STATS.MON: -1}),
+            ),
+            EventChoice(
+                name="Perform tricks to wow festival goers.",
+                checks=[StatCheck(STATS.DEX, num_dice=1, sides=20, dc=25)],
+                success=EventResult(stat_mods={STATS.MON: 5, STATS.PTS: 5}),
+                failure=EventResult(stat_mods={STATS.REP: -1}),
+            ),
+            EventChoice(
+                name="Just take it all in.",
+                success=EventResult(stat_mods={STATS.CHA: 1, STATS.PTS: 1}),
             ),
         ],
     ),
