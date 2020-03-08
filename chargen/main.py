@@ -307,7 +307,8 @@ EVENTS = {
                 skill_reqs=set(),
                 checks=[StatCheck(STATS.MON, num_dice=0, sides=4, dc=1)],
                 success=EventResult(
-                    desc="You buy and eat bread.", stat_mods={STATS.MON: -1}
+                    desc="You buy and eat bread.",
+                    stat_mods={STATS.MON: -1, STATS.PTS: 1},
                 ),
                 failure=EventResult(
                     desc="You have no money!", stat_mods={STATS.CON: -1}
@@ -320,7 +321,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You grab a piece of bread off of your bread tree."
                     " You sell the extra bread!",
-                    stat_mods={STATS.MON: +5},
+                    stat_mods={STATS.MON: +5, STATS.PTS: +1},
                 ),
                 failure=None,
             ),
@@ -334,7 +335,7 @@ EVENTS = {
                 skill_reqs={SKILLS.READ},
                 checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=20)],
                 success=EventResult(
-                    desc="It's fascinating.", stat_mods={STATS.INT: +2}
+                    desc="It's fascinating.", stat_mods={STATS.INT: +2, STATS.PTS: +1}
                 ),
                 failure=EventResult(desc="It's too hard to understand.", stat_mods={}),
             ),
@@ -342,7 +343,7 @@ EVENTS = {
                 name="Splash in puddles",
                 skill_reqs={},
                 checks=[StatCheck(STATS.CON, 1, 20, 20)],
-                success=EventResult(desc="", stat_mods={STATS.WIS: +2},),
+                success=EventResult(desc="", stat_mods={STATS.WIS: +2, STATS.PTS: +1},),
                 failure=EventResult(
                     desc="You catch a cold.", stat_mods={STATS.CON: -2},
                 ),
@@ -351,7 +352,9 @@ EVENTS = {
                 name="Conduct a sun ritual",
                 skill_reqs={},
                 checks=[StatCheck(STATS.WIS, 1, 20, 20)],
-                success=EventResult(desc="The rain slows.", stat_mods={STATS.WIS: +2},),
+                success=EventResult(
+                    desc="The rain slows.", stat_mods={STATS.WIS: +2, STATS.PTS: +1}
+                ),
                 failure=EventResult(
                     desc="Nothing happens.", stat_mods={STATS.WIS: +1},
                 ),
@@ -365,14 +368,18 @@ EVENTS = {
                 name="Eat the green crap.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
-                success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
+                success=EventResult(
+                    desc="You get it down.", stat_mods={STATS.CON: +2, STATS.PTS: +1}
+                ),
                 failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
             ),
             EventChoice(
                 name="Pretend to eat it.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 22)],
-                success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
+                success=EventResult(
+                    desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2, STATS.PTS: +1},
+                ),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
             ),
             EventChoice(
@@ -381,7 +388,7 @@ EVENTS = {
                 checks=[StatCheck(STATS.DEX, 1, 20, 30)],
                 success=EventResult(
                     desc="You live on your own.",
-                    stat_mods={STATS.WIS: +2, STATS.DEX: +2, STATS.CON: +2},
+                    stat_mods={STATS.WIS: +2, STATS.CON: +2, STATS.PTS: +1},
                 ),
                 failure=EventResult(desc="", stat_mods={},),
             ),
@@ -397,7 +404,12 @@ EVENTS = {
                 checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=20)],
                 success=EventResult(
                     desc="You make it to the top. What a beautiful view!",
-                    stat_mods={STATS.WIS: +1, STATS.STR: +1, STATS.REP: +1},
+                    stat_mods={
+                        STATS.WIS: +1,
+                        STATS.STR: +1,
+                        STATS.REP: +1,
+                        STATS.PTS: +1,
+                    },
                 ),
                 failure=EventResult(
                     desc="You collapse on the way up.", stat_mods={STATS.STR: +1}
@@ -411,7 +423,7 @@ EVENTS = {
                     desc="It seems to have been built by gnomes long ago."
                     " Some scrawlings on the surface indicate directions to"
                     " an ancient dungeon.",
-                    stat_mods={},
+                    stat_mods={STATS.PTS: +1},
                     trigger_events=["scrawlings"],
                 ),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2}),
@@ -422,7 +434,7 @@ EVENTS = {
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
                 success=EventResult(
                     desc="You find a beautiful underground lake.",
-                    stat_mods={STATS.WIS: +2},
+                    stat_mods={STATS.WIS: +2, STATS.PTS: +1},
                 ),
                 failure=EventResult(desc="You get lost in a maze of twisty passages."),
             ),
