@@ -22,7 +22,6 @@ class CharInfo:
         self.stats = {stat: 0 for stat in STATS}
         self.char_class = None
         self.skills = set()
-        self.age = 0
 
     def __repr__(self):
         return (
@@ -64,6 +63,7 @@ class CHAR_CLASSES(Enum):
 
 
 class STATS(Enum):
+    AGE = "LVL"
     STR = "STR"
     DEX = "DEX"
     CON = "CON"
@@ -437,8 +437,6 @@ class PlayerDisplay(urwid.WidgetWrap):
         self.stat_infos = {stat: urwid.Text("??") for stat in STATS}
         pile_contents = [self.class_info]
         pile_contents.extend([self.stat_infos[stat] for stat in STATS])
-        self.age_text = urwid.Text("??")
-        pile_contents.append(self.age_text)
         self.skill_pile = urwid.Pile([])
         pile_contents.append(self.skill_pile)
         self.pile = urwid.Pile(pile_contents)
@@ -449,12 +447,14 @@ class PlayerDisplay(urwid.WidgetWrap):
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
         for (stat, val) in char_info.stats.items():
-            if val != 0:
+            if stat == STATS.AGE:
+                if SKILLS.TIME in char_info.skills:
+                    self.revealed_stats.add(stat)
+            elif val != 0:
                 self.revealed_stats.add(stat)
+
             if stat in self.revealed_stats:
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
-        if SKILLS.TIME in char_info.skills:
-            self.age_text.set_text(str(char_info.age))
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
             self.skill_pile.contents.append(
@@ -592,8 +592,11 @@ class Game:
         return self.player.stats[stat] + self.dice(num_dice, sides)
 
     def play_random_event(self):
-        events = list((name, event) for (name, event) in EVENTS.items()
-                      if name not in self.seen_events)
+        events = list(
+            (name, event)
+            for (name, event) in EVENTS.items()
+            if name not in self.seen_events
+        )
         if not events:
             logging.warning("Ran out of random events")
             return
@@ -664,15 +667,15 @@ class Game:
     def play_linear(self):
         yield self.choose_class_menu()
         yield self.point_buy()
-        self.player.age += 1
+        self.player.stats[STATS.AGE] += 1
         yield self.choose_skill()
-        self.player.age += 1
+        self.player.stats[STATS.AGE] += 1
         yield self.choose_skill()
         yield from self.play_hobby()
         while True:
             yield from self.play_random_event()
-            self.player.age += 1
-            if self.player.age > 5:
+            self.player.stats[STATS.AGE] += 1
+            if self.player.stats[STATS.AGE] > 5:
                 yield self.aging_check()
             if self.player.stats[STATS.CON] <= 0:
                 yield self.popup_message("YOU DIE", self.next_screen)
