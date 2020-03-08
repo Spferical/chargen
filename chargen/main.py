@@ -935,7 +935,9 @@ class Game:
         events = list(
             (name, event)
             for (name, event) in EVENTS.items()
-            if name not in self.seen_events and event.prereq_fn(self.player)
+            if name not in self.seen_events
+            and event.prereq_fn(self.player)
+            and event.age_req is None
         )
         if not events:
             logging.warning("Ran out of random events")
@@ -958,6 +960,8 @@ class Game:
     def create_mandatory_event_table(self):
         for name, event in EVENTS.items():
             if event.age_req is not None:
+                assert event.age_req >= 2
+                logging.debug(f"mandatory {name}")
                 self.mandatory_events.setdefault(event.age_req, []).append(
                     (name, event)
                 )
