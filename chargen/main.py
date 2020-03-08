@@ -521,7 +521,7 @@ EVENTS = {
                     desc="You stare at the phone in fear, frozen in"
                     " place. Your breathing quickens, your hands go"
                     " cold, you fear that the worst may have come to pass.",
-                    stat_mods={STATS.WIS: -1}
+                    stat_mods={STATS.WIS: -1},
                 ),
                 failure=None,
             ),
@@ -586,9 +586,22 @@ def init_database():
         *(sqlalchemy.Column(stat.name, sqlalchemy.Integer()) for stat in STATS),
         *(sqlalchemy.Column(skill.name, sqlalchemy.Boolean()) for skill in SKILLS),
     )
+    for skill in SKILLS:
+        try:
+            engine.execute(f"alter table bones add column {skill.name} Boolean")
+        except sqlalchemy.OperationalError:
+            pass
+    for stat in STATS:
+        try:
+            engine.execute(f"alter table bones add column {skill.name} Integer")
+        except sqlalchemy.OperationalError:
+            pass
     metadata.create_all()
     sqlalchemy.orm.mapper(Bones, table)
-    return sqlalchemy.orm.create_session(bind=engine, autocommit=False, autoflush=True)
+    session = sqlalchemy.orm.create_session(
+        bind=engine, autocommit=False, autoflush=True
+    )
+    return session
 
 
 DATABASE_SESSION = init_database()
