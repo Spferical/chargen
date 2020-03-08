@@ -223,7 +223,14 @@ HOBBY_DESC_FRAGMENTS = {
 
 StatCheck = namedtuple("StatCheck", ["stat", "num_dice", "sides", "dc"])
 
-Event = namedtuple("Event", ["desc", "choices"])
+
+class Event:
+    def __init__(self, desc, choices, prereq_fn=lambda player: True):
+        self.desc = desc
+        self.choices = choices
+        self.prereq_fn = prereq_fn
+
+
 EventChoice = namedtuple(
     "EventChoice", ["name", "skill_reqs", "checks", "success", "failure"]
 )
@@ -597,7 +604,7 @@ class Game:
         events = list(
             (name, event)
             for (name, event) in EVENTS.items()
-            if name not in self.seen_events
+            if name not in self.seen_events and event.prereq_fn(self.player)
         )
         if not events:
             logging.warning("Ran out of random events")
