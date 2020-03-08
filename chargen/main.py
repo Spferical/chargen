@@ -156,7 +156,7 @@ class SKILLS(Enum):
     JUMP = "Jumping"
     CLIMB = "Climbing"
     READ = "Decipher Runes"
-    WRITE = "Runic Composition"
+    WRITE = "Inscription"
     CLOVER = "Four-Leaf Clover"
     TIME = "Celestial Lore"
     HERBOLOGY = "Herbology"
