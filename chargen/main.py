@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 from collections import namedtuple
+from datetime import date
 from enum import Enum
-import random
 import logging
+import os
+import random
 
 import urwid
+import sqlalchemy
+from sqlalchemy.ext.declarative import declarative_base
 
 
 logging.basicConfig(filename="log.txt", level=logging.DEBUG)
@@ -14,7 +18,19 @@ PALETTE = [
     ("disabled", "dark gray", ""),
     ("reversed", "standout", ""),
     ("warn", "dark red", ""),
+    ("green", "light green", ""),
 ]
+
+
+def save(name, char_info):
+    bones = Bones(name, char_info)
+    DATABASE_SESSION.add(bones)
+    DATABASE_SESSION.commit()
+
+
+def get_highscores():
+    top10 = list(DATABASE_SESSION.query(Bones).order_by(Bones.PTS).limit(10))
+    logging.info(top10)
 
 
 class CharInfo:
@@ -460,6 +476,37 @@ def fragment_desc_getter(fragments, n):
     return lambda x: " ".join(random.sample(fragments[x], n))
 
 
+Base = declarative_base()
+
+
+class Bones(object):
+    def __init__(self, name, char_info):
+        self.name = name
+        for stat in STATS:
+            setattr(self, stat.name, char_info.stats[stat])
+        for skill in SKILLS:
+            setattr(self, skill.name, skill in char_info.skills)
+
+
+def init_database():
+    os.makedirs("data", exist_ok=True)
+    engine = sqlalchemy.create_engine("sqlite:///data/bones.sqlite")
+    metadata = sqlalchemy.MetaData(bind=engine)
+    table = sqlalchemy.Table(
+        "bones",
+        metadata,
+        sqlalchemy.Column("id", sqlalchemy.Integer(), primary_key=True),
+        *(sqlalchemy.Column(stat.name, sqlalchemy.Integer()) for stat in STATS),
+        *(sqlalchemy.Column(skill.name, sqlalchemy.Boolean()) for skill in SKILLS),
+    )
+    metadata.create_all()
+    sqlalchemy.orm.mapper(Bones, table)
+    return sqlalchemy.orm.create_session(bind=engine, autocommit=False, autoflush=True)
+
+
+DATABASE_SESSION = init_database()
+
+
 class BetterButton(urwid.Button):
     button_left = urwid.Text("-")
     button_right = urwid.Text("")
@@ -600,6 +647,40 @@ class PlayerDisplay(urwid.WidgetWrap):
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
             self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
+
+
+class GameOver(urwid.WidgetWrap):
+    def __init__(self, player):
+        self.player = player
+        body = []
+        body.append(urwid.Divider("-"))
+        body.append(urwid.Text("RIP"))
+        body.append(urwid.Divider())
+        self.name_edit = urwid.Edit("")
+        body.append(urwid.AttrMap(self.name_edit, None, focus_map="reversed"))
+        body.append(urwid.Divider())
+        body.append(urwid.Text(f"Age {player.stats[STATS.AGE]}"))
+        body.append(urwid.Text(f"${player.stats[STATS.MON]}"))
+        body.append(urwid.Text(f"Reputation: {player.stats[STATS.REP]}"))
+        body.append(urwid.Text(f"Score: {player.stats[STATS.PTS]}"))
+        body.append(urwid.Text("Killed by old age."))
+        body.append(urwid.Text(f'{date.today().strftime("%B, %d, %Y")}'))
+        self.saved_text = urwid.Text("")
+        body.append(self.saved_text)
+        body.append(urwid.Divider("-"))
+        self.pile = urwid.Pile(body)
+        self.saved = False
+        super().__init__(urwid.Filler(self.pile, "top"))
+
+    def keypress(self, key, raw):
+        key = super().keypress(key, raw)
+        if key == "enter":
+            if not self.saved:
+                name = self.name_edit.get_edit_text()
+                save(name, self.player)
+                self.saved = True
+                self.saved_text.set_text([("green", "SAVED"), f" as {name}"])
+            return True
 
 
 class Game:
@@ -887,7 +968,7 @@ class Game:
             if self.player.stats[STATS.CON] <= 0:
                 yield self.popup_message("YOU DIE", self.next_screen)
                 break
-        raise urwid.ExitMainLoop()
+        yield GameOver(self.player)
 
     def aging_check(self):
         msg = "TIME TAKES ITS TOLL"
@@ -895,6 +976,9 @@ class Game:
         self.player.stats[STATS.CON] -= con_debuff
         msg += f"\n\n-2d4=-{con_debuff} CON"
         return self.popup_message(msg, self.next_screen)
+
+    def game_over(self):
+        pass
 
     def run(self):
         self.loop = urwid.MainLoop(self.top, palette=PALETTE)
