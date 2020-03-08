@@ -144,6 +144,8 @@ class SKILLS(Enum):
     ARCHAEOLOGY = "Archaeology"
 
     NUMEROLOGY_1 = "Numerology I"
+    NUMEROLOGY_2 = "Numerology II"
+    NUMEROLOGY_3 = "Numerology III"
 
 
 SKILL_DESCS = {
@@ -162,12 +164,16 @@ SKILL_DESCS = {
     SKILLS.ARCHAEOLOGY: "Know human behavior by studying artifacts and landscapes.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities.",
+    SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
+    SKILLS.NUMEROLOGY_3: "Untangle the calculus of intertwined dimensions."
 }
 
 SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
-    SKILLS.DETECTIVE: [SKILLS.IDENTIFY]
     SKILLS.ARCHAEOLOGY: [SKILLS.EMPATHY],
+    SKILLS.DETECTIVE: [SKILLS.IDENTIFY],
+    SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
+    SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2]
 }
 
 SKILL_STAT_PREREQS = {
@@ -380,7 +386,8 @@ EVENTS = {
                     desc="You find a beautiful underground lake.",
                     stat_mods={STATS.WIS: +2},
                 ),
-                failure=EventResult(desc="You get lost in a maze of twisty passages."),
+                failure=EventResult(
+                    desc="You get lost in a maze of twisty passages."),
             ),
         ],
     ),
@@ -662,9 +669,29 @@ class Game:
         return True
 
     def choose_skill(self):
+        skills = list(set(SKILLS).difference(self.player.skills))
+        skill_graph = {skill: [] for skill in set(SKILLS)}
+        for a1, a0s in SKILL_PREREQS.items():
+            for a0 in a0s:
+                skill_graph[a0].append(a1)
+
+        no_prereqs = set(
+            skill for skill in skills
+            if ((skill not in SKILL_PREREQS
+                 or set(SKILL_PREREQS[skill]).difference(
+                     set(self.player.skills))) != {})
+            and skill not in self.player.skills)
+        agenda = list(self.player.skills | no_prereqs)
+        one_off = set()
+        for item in agenda:
+            for next_skill in skill_graph[item]:
+                if next_skill not in no_prereqs \
+                   and next_skill not in self.player.skills:
+                    one_off.add(next_skill)
+
         return SplitMenu(
             "CHOOSE A SKILL",
-            list(set(SKILLS).difference(self.player.skills)),
+            list(one_off | no_prereqs),
             display_fn=lambda c: c.value,
             description_fn=get_skill_desc,
             is_enabled_fn=self.player_can_choose_skill,
