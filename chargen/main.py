@@ -179,9 +179,22 @@ class SKILLS(Enum):
     TWO_HANDED_COMBAT = "Two-Handed Combat"
     THREE_HANDED_COMBAT = "Three-Handed Combat"
 
+    MIDDLE_SCHOOL_DIPLOMA = "Middle School Diploma"
+    HIGH_SCHOOL_DIPLOMA = "High School Diploma"
+    BACHELORS_DEGREE = "Bachelor's Degree"
+    MASTERS_DEGREE = "Master's Degree"
+    DOCTORAL_DEGREE = "Doctoral Degree"
+
     def __repr__(self):
         return self.value
 
+HIDDEN_SKILLS = {
+    SKILLS.MIDDLE_SCHOOL_DIPLOMA,
+    SKILLS.HIGH_SCHOOL_DIPLOMA,
+    SKILLS.BACHELORS_DEGREE,
+    SKILLS.MASTERS_DEGREE,
+    SKILLS.DOCTORAL_DEGREE
+}
 
 SKILL_DESCS = {
     SKILLS.JUMP: "You can jump very high. Gives +5 on jump height rolls.",
@@ -296,6 +309,47 @@ HOBBY_DESC_FRAGMENTS = {
     ],
 }
 
+AGES = [
+    2,
+    5,
+    9,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    24,
+    26,
+    28,
+    34,
+    38,
+    44,
+    46,
+    50,
+    52,
+    59,
+    62,
+    65,
+    69,
+    74,
+    78,
+    80,
+    84,
+    88,
+    92,
+    95,
+    97,
+    99,
+    100,
+    103
+]
+
 StatCheck = namedtuple("StatCheck", ["stat", "num_dice", "sides", "dc"])
 
 
@@ -319,9 +373,10 @@ class EventChoice:
 
 
 class EventResult:
-    def __init__(self, desc, stat_mods={}, trigger_events=()):
+    def __init__(self, desc, stat_mods={}, skills_gained={}, trigger_events=()):
         self.desc = desc
         self.stat_mods = stat_mods
+        self.skills_gained = skills_gained
         self.trigger_events = trigger_events
 
 
@@ -679,6 +734,66 @@ EVENTS = {
             ),
         ],
     ),
+    "exam_1": Event(
+        age_req=14,
+        desc="You turn the sheet of paper over, and examine the cryptic runes"
+        " inscribed upon it. You feel a chill run down your spine -- this is"
+        " the proving ground of your generation. Time is of the essence.",
+        choices=[
+            EventChoice(
+                name="Focus on the math problems.",
+                skill_reqs=[SKILLS.NUMEROLOGY_1],
+                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)],
+                success=EventResult(
+                    desc="Arithmancy has always been your strength. You pass"
+                    " the trials with flying colors.",
+                    stat_mods={STATS.INT: 1},
+                    skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="The numbers confound you. You are unable to answer"
+                    " most of the questions.",
+                    stat_mods={},
+                ),
+            ),
+            EventChoice(
+                name="Focus on the reading comprehension questions.",
+                skill_reqs=[SKILLS.READ, SKILLS.WRITE],
+                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)],
+                success=EventResult(
+                    desc="You decipher the runes with ease. You pass"
+                    " the trials with flying colors",
+                    stat_mods={STATS.INT: 1},
+                    skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="The numbers confound you. You are unable to answer"
+                    " most of the questions.",
+                    stat_mods={},
+                ),
+            ),
+            EventChoice(
+                name="Focus on the oral examination.",
+                skill_reqs=[SKILLS.RHETORIC, SKILLS.COMMUNICATION_1],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)
+                ],
+                success=EventResult(
+                    desc="You give an oral presentation. You pass the"
+                    " trials with flying colors.",
+                    stat_mods={STATS.INT: 1},
+                    skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
+                ),
+                failure=EventResult(
+                    desc="You stammer and fumble over your words. You are"
+                    " unable to answer most of the questions",
+                    stat_mods={},
+                ),
+            ),
+        ],
+    ),
 }
 
 
@@ -863,6 +978,7 @@ class PlayerDisplay(urwid.WidgetWrap):
             if stat == STATS.AGE:
                 if SKILLS.TIME in char_info.skills:
                     self.revealed_stats.add(stat)
+                    #val += random.randint(0, 1)
             elif val != 0:
                 self.revealed_stats.add(stat)
 
@@ -1043,7 +1159,7 @@ class Game:
 
         yield SplitMenu(
             "CHOOSE A SKILL",
-            list(one_off | no_prereqs),
+            list((one_off | no_prereqs).difference(HIDDEN_SKILLS)),
             display_fn=lambda c: c.value,
             description_fn=get_skill_desc,
             is_enabled_fn=self.player_can_choose_skill,
@@ -1178,6 +1294,9 @@ class Game:
         for (stat, mod) in result.stat_mods.items():
             msg += f" {mod:+} {stat.value}"
             self.player.stats[stat] += mod
+        for skill in result.skills_gained:
+            msg += f" gained {skill.value}"
+            self.player.skills.add(skill)
         yield self.popup_message(msg, self.next_screen)
 
         for event_name in result.trigger_events:
@@ -1208,6 +1327,7 @@ class Game:
         self.player.stats[STATS.AGE] += 1
         yield from self.choose_skill()
         yield from self.play_hobby()
+        turns = 1
         while True:
             if self.mandatory_events.get(self.player.stats[STATS.AGE]):
                 yield from self.play_mandatory_event()
@@ -1215,8 +1335,9 @@ class Game:
             else:
                 yield from self.play_random_event()
             yield from self.choose_skill()
-            self.player.stats[STATS.AGE] += 1
-            if self.player.stats[STATS.AGE] > 5:
+            turns += 1
+            self.player.stats[STATS.AGE] = AGES[turns]
+            if self.player.stats[STATS.AGE] > 55:
                 yield self.aging_check()
             if self.player.stats[STATS.CON] <= 0:
                 yield self.popup_message("YOU DIE", self.next_screen)
