@@ -22,7 +22,6 @@ class CharInfo:
         self.stats = {stat: 0 for stat in STATS}
         self.char_class = None
         self.skills = set()
-        self.age = 0
 
     def __repr__(self):
         return (
@@ -64,6 +63,7 @@ class CHAR_CLASSES(Enum):
 
 
 class STATS(Enum):
+    AGE = "LVL"
     STR = "STR"
     DEX = "DEX"
     CON = "CON"
@@ -267,8 +267,7 @@ EVENTS = {
                 success=EventResult(
                     desc="It's fascinating.", stat_mods={STATS.INT: +2}
                 ),
-                failure=EventResult(
-                    desc="It's too hard to understand.", stat_mods={}),
+                failure=EventResult(desc="It's too hard to understand.", stat_mods={}),
             ),
             EventChoice(
                 name="Splash in puddles",
@@ -283,8 +282,7 @@ EVENTS = {
                 name="Conduct a sun ritual",
                 skill_reqs={},
                 checks=[StatCheck(STATS.WIS, 1, 20, 20)],
-                success=EventResult(desc="The rain slows.",
-                                    stat_mods={STATS.WIS: +2},),
+                success=EventResult(desc="The rain slows.", stat_mods={STATS.WIS: +2},),
                 failure=EventResult(
                     desc="Nothing happens.", stat_mods={STATS.WIS: +1},
                 ),
@@ -298,17 +296,14 @@ EVENTS = {
                 name="Eat the green crap.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
-                success=EventResult(desc="You get it down.",
-                                    stat_mods={STATS.CON: +2}),
-                failure=EventResult(desc="You spit it out.",
-                                    stat_mods={STATS.CON: -1}),
+                success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
+                failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
             ),
             EventChoice(
                 name="Pretend to eat it.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 22)],
-                success=EventResult(desc="", stat_mods={
-                                    STATS.CON: -1, STATS.DEX: +2},),
+                success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
             ),
             EventChoice(
@@ -401,8 +396,7 @@ class PointBuy(urwid.WidgetWrap):
         ]
 
         def on_change(*args):
-            points_left_text.set_text(
-                f"Points left: {self.get_points_remaining()}")
+            points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
 
         stat_edit_column = [urwid.Text("STATS")]
         stat_bonus_column = [urwid.Text("CLASS BONUSES")]
@@ -432,8 +426,7 @@ class PointBuy(urwid.WidgetWrap):
             self.warning_text.set_text("")
         if key in ("enter", " "):
             if self.get_points_remaining() != 0:
-                self.warning_text.set_text(
-                    ("warn", "Must have zero points remaining."))
+                self.warning_text.set_text(("warn", "Must have zero points remaining."))
                 return
             stats = {
                 stat: editor.value() + self.bonuses.get(stat, 0)
@@ -450,8 +443,6 @@ class PlayerDisplay(urwid.WidgetWrap):
         self.stat_infos = {stat: urwid.Text("??") for stat in STATS}
         pile_contents = [self.class_info]
         pile_contents.extend([self.stat_infos[stat] for stat in STATS])
-        self.age_text = urwid.Text("??")
-        pile_contents.append(self.age_text)
         self.skill_pile = urwid.Pile([])
         pile_contents.append(self.skill_pile)
         self.pile = urwid.Pile(pile_contents)
@@ -462,25 +453,24 @@ class PlayerDisplay(urwid.WidgetWrap):
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
         for (stat, val) in char_info.stats.items():
-            if val != 0:
+            if stat == STATS.AGE:
+                if SKILLS.TIME in char_info.skills:
+                    self.revealed_stats.add(stat)
+            elif val != 0:
                 self.revealed_stats.add(stat)
+
             if stat in self.revealed_stats:
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
-        if SKILLS.TIME in char_info.skills:
-            self.age_text.set_text(str(char_info.age))
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
-            self.skill_pile.contents.append(
-                (urwid.Text(skill.value), ("pack", None)))
+            self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
 
 
 class Game:
     def __init__(self):
-        self.main_widget_container = urwid.Padding(
-            urwid.Edit(), left=1, right=1)
+        self.main_widget_container = urwid.Padding(urwid.Edit(), left=1, right=1)
         self.player_display = PlayerDisplay()
-        columns = urwid.Columns(
-            [self.main_widget_container, self.player_display])
+        columns = urwid.Columns([self.main_widget_container, self.player_display])
         padded = urwid.Padding(columns, left=2, right=2)
         overlay = urwid.Overlay(
             padded,
@@ -598,15 +588,17 @@ class Game:
         return self.make_popup(layout)
 
     def close_popup(self):
-        self.set_main_widget(
-            self.main_widget_container.original_widget.bottom_w)
+        self.set_main_widget(self.main_widget_container.original_widget.bottom_w)
 
     def roll_stat_check(self, stat, num_dice, sides):
         return self.player.stats[stat] + self.dice(num_dice, sides)
 
     def play_random_event(self):
-        events = list((name, event) for (name, event) in EVENTS.items()
-                      if name not in self.seen_events)
+        events = list(
+            (name, event)
+            for (name, event) in EVENTS.items()
+            if name not in self.seen_events
+        )
         if not events:
             logging.warning("Ran out of random events")
             return
@@ -677,15 +669,15 @@ class Game:
     def play_linear(self):
         yield self.choose_class_menu()
         yield self.point_buy()
-        self.player.age += 1
+        self.player.stats[STATS.AGE] += 1
         yield self.choose_skill()
-        self.player.age += 1
+        self.player.stats[STATS.AGE] += 1
         yield self.choose_skill()
         yield from self.play_hobby()
         while True:
             yield from self.play_random_event()
-            self.player.age += 1
-            if self.player.age > 5:
+            self.player.stats[STATS.AGE] += 1
+            if self.player.stats[STATS.AGE] > 5:
                 yield self.aging_check()
             if self.player.stats[STATS.CON] <= 0:
                 yield self.popup_message("YOU DIE", self.next_screen)
