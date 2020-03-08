@@ -303,7 +303,7 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name="Grow bread. Establish an independent farmering commune.",
+                name="Grow bread. Establish an independent farming commune.",
                 skill_reqs={SKILLS.HERBOLOGY},
                 checks=(),
                 success=EventResult(
