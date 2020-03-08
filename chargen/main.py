@@ -1006,6 +1006,11 @@ def init_database():
         *(sqlalchemy.Column(stat.name, sqlalchemy.Integer()) for stat in STATS),
         *(sqlalchemy.Column(skill.name, sqlalchemy.Boolean()) for skill in SKILLS),
     )
+    metadata.create_all()
+    sqlalchemy.orm.mapper(Bones, table)
+    session = sqlalchemy.orm.create_session(
+        bind=engine, autocommit=False, autoflush=True
+    )
     for skill in SKILLS:
         try:
             engine.execute(f"alter table bones add column {skill.name} Boolean")
@@ -1013,14 +1018,9 @@ def init_database():
             pass
     for stat in STATS:
         try:
-            engine.execute(f"alter table bones add column {skill.name} Integer")
+            engine.execute(f"alter table bones add column {stat.name} Integer")
         except sqlalchemy.exc.OperationalError:
             pass
-    metadata.create_all()
-    sqlalchemy.orm.mapper(Bones, table)
-    session = sqlalchemy.orm.create_session(
-        bind=engine, autocommit=False, autoflush=True
-    )
     return session
 
 
