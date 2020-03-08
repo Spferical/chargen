@@ -685,6 +685,10 @@ class Game:
 
     def choose_skill(self):
         skills = list(set(SKILLS).difference(self.player.skills))
+        if not any(self.player_can_choose_skill(skill) for skill in skills):
+            logging.warning("No skills available for player to choose!")
+            return
+
         skill_graph = {skill: [] for skill in set(SKILLS)}
         for a1, a0s in SKILL_PREREQS.items():
             for a0 in a0s:
@@ -704,7 +708,7 @@ class Game:
                    and next_skill not in self.player.skills:
                     one_off.add(next_skill)
 
-        return SplitMenu(
+        yield SplitMenu(
             "CHOOSE A SKILL",
             list(one_off | no_prereqs),
             display_fn=lambda c: c.value,
@@ -845,13 +849,13 @@ class Game:
         yield self.choose_class_menu()
         yield self.point_buy()
         self.player.stats[STATS.AGE] += 1
-        yield self.choose_skill()
+        yield from self.choose_skill()
         self.player.stats[STATS.AGE] += 1
-        yield self.choose_skill()
+        yield from self.choose_skill()
         yield from self.play_hobby()
         while True:
             yield from self.play_random_event()
-            yield self.choose_skill()
+            yield from self.choose_skill()
             self.player.stats[STATS.AGE] += 1
             if self.player.stats[STATS.AGE] > 5:
                 yield self.aging_check()
