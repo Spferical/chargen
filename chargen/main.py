@@ -174,6 +174,10 @@ class SKILLS(Enum):
     NUMEROLOGY_3 = "Numerology III"
 
     UNARMED_COMBAT = "Unarmed Combat"
+    MOUNTED_COMBAT = "Mounted Combat"
+    ONE_HANDED_COMBAT = "One-Handed Combat"
+    TWO_HANDED_COMBAT = "Two-Handed Combat"
+    THREE_HANDED_COMBAT = "Three-Handed Combat"
 
     def __repr__(self):
         return self.value
@@ -202,6 +206,13 @@ SKILL_DESCS = {
     SKILLS.COMMUNICATION_2: "How to make friends and influence people.",
     SKILLS.RHETORIC: "Influence people. Spread your beliefs. Persuade the masses.",
     SKILLS.UNARMED_COMBAT: "Fight with your bare fists.",
+    SKILLS.MOUNTED_COMBAT: "Fight atop a trusted steed.",
+    SKILLS.ONE_HANDED_COMBAT: "Effectively use one-handed weapons,"
+    " like knives, long swords, and hand axes.",
+    SKILLS.TWO_HANDED_COMBAT: "Effectively use two-handed weapons,"
+    " like polearms, quarterstaves, and battle axes.",
+    SKILLS.THREE_HANDED_COMBAT: "Effectively use three-handed weapons,"
+    " like tentacle foci, reflex crystals, and the subway saxophone.",
 }
 
 SKILL_PREREQS = {
@@ -212,6 +223,9 @@ SKILL_PREREQS = {
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
     SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2],
     SKILLS.COMMUNICATION_2: [SKILLS.COMMUNICATION_1, SKILLS.RHETORIC],
+    SKILLS.ONE_HANDED_COMBAT: [SKILLS.UNARMED_COMBAT],
+    SKILLS.TWO_HANDED_COMBAT: [SKILLS.UNARMED_COMBAT],
+    SKILLS.THREE_HANDED_COMBAT: [SKILLS.ONE_HANDED_COMBAT, SKILLS.TWO_HANDED_COMBAT],
 }
 
 SKILL_STAT_PREREQS = {
@@ -231,6 +245,10 @@ SKILL_STAT_PREREQS = {
     SKILLS.COMMUNICATION_2: {STATS.CHA: 16},
     SKILLS.RHETORIC: {STATS.INT: 12},
     SKILLS.UNARMED_COMBAT: {STATS.STR: 15},
+    SKILLS.MOUNTED_COMBAT: {STATS.STR: 13, STATS.WIS: 12},
+    SKILLS.ONE_HANDED_COMBAT: {STATS.STR: 14, STATS.DEX: 14},
+    SKILLS.TWO_HANDED_COMBAT: {STATS.STR: 18},
+    SKILLS.THREE_HANDED_COMBAT: {STATS.STR: 20, STATS.LUC: 18},
 }
 
 
