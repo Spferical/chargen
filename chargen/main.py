@@ -498,12 +498,12 @@ EVENTS = {
             EventChoice(
                 name="Pick up the phone.",
                 skill_reqs=[SKILLS.COMMUNICATION_1],
-                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=17),],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=25),],
                 success=EventResult(
                     desc="You have a delightful conversation with a telemarketer."
                     " You discover that both of you have a shared love of lemon"
                     " poppyseed cake, mainecoon cats, and compact vacuum cleaners.",
-                    stat_mods={STATS.MON: -50, STATS.PTS: 50, STATS.CHA: 1},
+                    stat_mods={STATS.MON: -50, STATS.PTS: 10, STATS.CHA: 1},
                 ),
                 failure=EventResult(
                     desc="You have an unfruitful conversation with a telemarketer."
