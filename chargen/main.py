@@ -91,6 +91,7 @@ class STATS(Enum):
     LUC = "LUC"
     MON = "$$$"
     REP = "REP"
+    PET = "PET"
 
     def __repr__(self):
         return self.value
@@ -165,6 +166,7 @@ class SKILLS(Enum):
     ARCHAEOLOGY = "Archaeology"
     COSMOLOGY = "Cosmology"
     RHETORIC = "Rhetoric"
+    ANIMALS = "Animal Empathy"
 
     COMMUNICATION_1 = "Communication I"
     COMMUNICATION_2 = "Communication II"
@@ -188,12 +190,13 @@ class SKILLS(Enum):
     def __repr__(self):
         return self.value
 
+
 HIDDEN_SKILLS = {
     SKILLS.MIDDLE_SCHOOL_DIPLOMA,
     SKILLS.HIGH_SCHOOL_DIPLOMA,
     SKILLS.BACHELORS_DEGREE,
     SKILLS.MASTERS_DEGREE,
-    SKILLS.DOCTORAL_DEGREE
+    SKILLS.DOCTORAL_DEGREE,
 }
 
 SKILL_DESCS = {
@@ -211,6 +214,7 @@ SKILL_DESCS = {
     SKILLS.IDENTIFY: "Ascertain the instrinsic nature of an entity.",
     SKILLS.ARCHAEOLOGY: "Know human behavior by studying artifacts and landscapes.",
     SKILLS.COSMOLOGY: "Unlock the secrets of the universe.",
+    SKILLS.ANIMALS: "Allows you to communicate with animals and magical beasts.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities.",
     SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
@@ -233,6 +237,7 @@ SKILL_PREREQS = {
     SKILLS.ARCHAEOLOGY: [SKILLS.READ],
     SKILLS.DETECTIVE: [SKILLS.IDENTIFY],
     SKILLS.COSMOLOGY: [SKILLS.TIME],
+    SKILLS.ANIMALS: [SKILLS.EMPATHY],
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
     SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2],
     SKILLS.COMMUNICATION_2: [SKILLS.COMMUNICATION_1, SKILLS.RHETORIC],
@@ -347,7 +352,7 @@ AGES = [
     97,
     99,
     100,
-    103
+    103,
 ]
 
 StatCheck = namedtuple("StatCheck", ["stat", "num_dice", "sides", "dc"])
@@ -373,7 +378,7 @@ class EventChoice:
 
 
 class EventResult:
-    def __init__(self, desc, stat_mods={}, skills_gained={}, trigger_events=()):
+    def __init__(self, desc="", stat_mods={}, skills_gained={}, trigger_events=()):
         self.desc = desc
         self.stat_mods = stat_mods
         self.skills_gained = skills_gained
@@ -445,6 +450,7 @@ EVENTS = {
         ],
     ),
     "leaves": Event(
+        prereq_fn=lambda player: player.stats[STATS.AGE] <= 15,
         desc="Leaves for dinner.",
         choices=[
             EventChoice(
@@ -743,8 +749,10 @@ EVENTS = {
             EventChoice(
                 name="Focus on the math problems.",
                 skill_reqs=[SKILLS.NUMEROLOGY_1],
-                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)],
+                checks=[
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
+                ],
                 success=EventResult(
                     desc="Arithmancy has always been your strength. You pass"
                     " the trials with flying colors.",
@@ -760,8 +768,10 @@ EVENTS = {
             EventChoice(
                 name="Focus on the reading comprehension questions.",
                 skill_reqs=[SKILLS.READ, SKILLS.WRITE],
-                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)],
+                checks=[
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
+                ],
                 success=EventResult(
                     desc="You decipher the runes with ease. You pass"
                     " the trials with flying colors",
@@ -777,8 +787,9 @@ EVENTS = {
             EventChoice(
                 name="Focus on the oral examination.",
                 skill_reqs=[SKILLS.RHETORIC, SKILLS.COMMUNICATION_1],
-                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13)
+                checks=[
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
                 ],
                 success=EventResult(
                     desc="You give an oral presentation. You pass the"
@@ -791,6 +802,29 @@ EVENTS = {
                     " unable to answer most of the questions",
                     stat_mods={},
                 ),
+            ),
+        ],
+    ),
+    "pet": Event(
+        prereq_fn=lambda player: SKILLS.ANIMALS in player.skills,
+        desc="You hear a familiar call. Your long-lost pet runs towards you joyfully!"
+        " Your pet is...",
+        choices=[
+            EventChoice(
+                name="a dog!",
+                success=EventResult(stat_mods={STATS.PET: 1, STATS.PTS: 4}),
+            ),
+            EventChoice(
+                name="a cat!",
+                success=EventResult(stat_mods={STATS.PET: 1, STATS.PTS: 4}),
+            ),
+            EventChoice(
+                name="a bear!",
+                success=EventResult(stat_mods={STATS.PET: 1, STATS.PTS: 4}),
+            ),
+            EventChoice(
+                name="a little girl!",
+                success=EventResult(stat_mods={STATS.PET: 1, STATS.PTS: 4}),
             ),
         ],
     ),
@@ -978,7 +1012,7 @@ class PlayerDisplay(urwid.WidgetWrap):
             if stat == STATS.AGE:
                 if SKILLS.TIME in char_info.skills:
                     self.revealed_stats.add(stat)
-                    #val += random.randint(0, 1)
+                    # val += random.randint(0, 1)
             elif val != 0:
                 self.revealed_stats.add(stat)
 
