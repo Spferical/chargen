@@ -173,6 +173,8 @@ class SKILLS(Enum):
     NUMEROLOGY_2 = "Numerology II"
     NUMEROLOGY_3 = "Numerology III"
 
+    UNARMED_COMBAT = "Unarmed Combat"
+
     def __repr__(self):
         return self.value
 
@@ -199,6 +201,7 @@ SKILL_DESCS = {
     SKILLS.COMMUNICATION_1: "Learn how to communicate with others.",
     SKILLS.COMMUNICATION_2: "How to make friends and influence people.",
     SKILLS.RHETORIC: "Influence people. Spread your beliefs. Persuade the masses.",
+    SKILLS.UNARMED_COMBAT: "Fight with your bare fists.",
 }
 
 SKILL_PREREQS = {
@@ -227,6 +230,7 @@ SKILL_STAT_PREREQS = {
     SKILLS.COMMUNICATION_1: {STATS.CHA: 14},
     SKILLS.COMMUNICATION_2: {STATS.CHA: 16},
     SKILLS.RHETORIC: {STATS.INT: 12},
+    SKILLS.UNARMED_COMBAT: {STATS.STR: 15},
 }
 
 
@@ -552,6 +556,51 @@ EVENTS = {
                 checks=[],
                 success=EventResult(desc="What a tragedy."),
                 failure=None,
+            ),
+        ],
+    ),
+    "beach": Event(
+        desc="You are sunbathing on the beach, basking in a sea of photons."
+        " A seagull lands near your foot, and gazes at you expectantly.",
+        choices=[
+            EventChoice(
+                name="Feed it some bread crumbs.",
+                skill_reqs=[],
+                checks=[],
+                success=EventResult(
+                    desc="You walk over to the nearest supermarket"
+                    " and buy some panko breadcrumbs. Upon returning,"
+                    " you discover that the seagull has disappeared.",
+                    stat_mods={STATS.MON: -5, STATS.WIS: -1},
+                ),
+                failure=None,
+            ),
+            EventChoice(
+                name="Tell it to go away.",
+                skill_reqs=[SKILLS.RHETORIC],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=35)],
+                success=EventResult(
+                    desc="You successfully convince the seagull to" " leave you alone.",
+                    stat_mods={STATS.WIS: 1, STATS.PTS: 20},
+                ),
+                failure=EventResult(
+                    desc="The seagull remains unconvinced, and" " mauls your leg.",
+                    stat_mods={STATS.CON: -3, STATS.WIS: -1},
+                ),
+            ),
+            EventChoice(
+                name="Fight.",
+                skill_reqs=[SKILLS.UNARMED_COMBAT],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=35)],
+                success=EventResult(
+                    desc="It was a bloody and difficult battle,"
+                    " but you managed to fend off the beast",
+                    stat_mods={STATS.STR: 1, STATS.PTS: 20},
+                ),
+                failure=EventResult(
+                    desc="The fight goes poorly. You limp away.",
+                    stat_mods={STATS.CON: -3, STATS.STR: -1},
+                ),
             ),
         ],
     ),
