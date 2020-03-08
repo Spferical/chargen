@@ -983,7 +983,6 @@ class Game:
         yield from self.play_hobby()
         while True:
             if self.player.stats[STATS.AGE] in self.mandatory_events:
-                logging.info("performing mandatory event")
                 yield from self.play_mandatory_event()
                 continue
             else:
