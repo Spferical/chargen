@@ -142,6 +142,7 @@ class SKILLS(Enum):
     DETECTIVE = "Detective"
     IDENTIFY = "Identify"
     ARCHAEOLOGY = "Archaeology"
+    COSMOLOGY = "Cosmology"
 
     NUMEROLOGY_1 = "Numerology I"
     NUMEROLOGY_2 = "Numerology II"
@@ -162,6 +163,7 @@ SKILL_DESCS = {
     SKILLS.DETECTIVE: "Read between the lines, uncover the mystery.",
     SKILLS.IDENTIFY: "Ascertain the instrinsic nature of an entity.",
     SKILLS.ARCHAEOLOGY: "Know human behavior by studying artifacts and landscapes.",
+    SKILLS.COSMOLOGY: "Unlock the secrets of the universe.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities.",
     SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
@@ -172,6 +174,7 @@ SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
     SKILLS.ARCHAEOLOGY: [SKILLS.EMPATHY],
     SKILLS.DETECTIVE: [SKILLS.IDENTIFY],
+    SKILLS.COSMOLOGY: [SKILLS.TIME],
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
     SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2]
 }
@@ -185,6 +188,7 @@ SKILL_STAT_PREREQS = {
     SKILLS.EMPATHY: {STATS.WIS: 12},
     SKILLS.IDENTIFY: {STATS.INT: 13},
     SKILLS.DETECTIVE: {STATS.INT: 15},
+    SKILLS.COSMOLOGY: {STATS.WIS: 13, STATS.INT: 10},
     SKILLS.NUMEROLOGY_1: {STATS.INT: 12},
     SKILLS.NUMEROLOGY_2: {STATS.INT: 15},
     SKILLS.NUMEROLOGY_3: {STATS.INT: 15},
