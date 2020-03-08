@@ -216,8 +216,8 @@ EventChoice = namedtuple(
 )
 EventResult = namedtuple("EventResult", ["desc", "stat_mods"])
 
-EVENTS = [
-    Event(
+EVENTS = {
+    "hunger": Event(
         desc="You're hungry.",
         choices=[
             EventChoice(
@@ -244,7 +244,7 @@ EVENTS = [
             ),
         ],
     ),
-    Event(
+    "rain": Event(
         desc="It's raining outside.",
         choices=[
             EventChoice(
@@ -276,7 +276,7 @@ EVENTS = [
             ),
         ],
     ),
-    Event(
+    "leaves": Event(
         desc="Leaves for dinner.",
         choices=[
             EventChoice(
@@ -305,7 +305,7 @@ EVENTS = [
             ),
         ],
     ),
-]
+}
 
 
 def fragment_desc_getter(fragments, n):
@@ -439,7 +439,6 @@ class PlayerDisplay(urwid.WidgetWrap):
         super().__init__(urwid.Filler(self.pile, "top"))
 
     def update(self, char_info):
-        logging.debug(f"Displaying char info {repr(char_info)}")
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
         for (stat, val) in char_info.stats.items():
@@ -582,12 +581,14 @@ class Game:
         return self.player.stats[stat] + self.dice(num_dice, sides)
 
     def play_random_event(self):
-        events = list(filter((lambda e: e.desc not in self.seen_events), EVENTS))
+        events = list((name, event) for (name, event) in EVENTS.items()
+                      if name not in self.seen_events)
         if not events:
             logging.warning("Ran out of random events")
             return
-        event = random.choice(events)
-        self.seen_events.add(event.desc)
+        (name, event) = random.choice(events)
+        self.seen_events.add(name)
+        logging.info(f"Triggered {name} event")
         choice = None
 
         def on_choice(selected):
@@ -614,6 +615,7 @@ class Game:
             is_enabled_fn=player_has_skill_prereqs,
             callback=on_choice,
         )
+        logging.info(f"Player chose {choice.name}")
         assert choice is not None
         overall_success = True
         msg = ""
