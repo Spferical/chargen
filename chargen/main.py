@@ -527,6 +527,34 @@ EVENTS = {
             ),
         ],
     ),
+    "trolly": Event(
+        desc="A runaway trolly barrels towards five people tied to the tracks."
+        " A fat man stands next to you. If you push him into the track, you can"
+        " stop the trolly before it kills the people.",
+        choices=[
+            EventChoice(
+                name="Push the fat man",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=30)],
+                success=EventResult(desc="", stat_mods={STATS.PTS: 4}),
+                failure=EventResult(desc="", stat_mods={STATS.REP: -3}),
+            ),
+            EventChoice(
+                name="Jump into the track yourself.",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.CON, num_dice=1, sides=20, dc=30)],
+                success=EventResult(desc="", stat_mods={STATS.REP: 10, STATS.PTS: 10}),
+                failure=EventResult(desc="", stat_mods={STATS.CON: -10}),
+            ),
+            EventChoice(
+                name="Do nothing",
+                skill_reqs=[],
+                checks=[],
+                success=EventResult(desc="What a tragedy."),
+                failure=None,
+            ),
+        ],
+    ),
 }
 
 
