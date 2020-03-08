@@ -167,7 +167,7 @@ SKILL_DESCS = {
     " Necessary for the creation of magical scrolls.",
     SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
     SKILLS.TIME: "Knowledge behind the motion of celestial bodies.",
-    SKILLS.HERBOLOGY: "Ability to grow and nurture plants.",
+    SKILLS.HERBOLOGY: "Grow and nurture plants.",
     SKILLS.EMPATHY: "Understand others. Understand yourself.",
     SKILLS.DETECTIVE: "Read between the lines, uncover the mystery.",
     SKILLS.IDENTIFY: "Ascertain the instrinsic nature of an entity.",
@@ -181,7 +181,7 @@ SKILL_DESCS = {
 
 SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
-    SKILLS.ARCHAEOLOGY: [SKILLS.EMPATHY],
+    SKILLS.ARCHAEOLOGY: [SKILLS.READ],
     SKILLS.DETECTIVE: [SKILLS.IDENTIFY],
     SKILLS.COSMOLOGY: [SKILLS.TIME],
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
