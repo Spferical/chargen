@@ -164,6 +164,10 @@ class SKILLS(Enum):
     IDENTIFY = "Identify"
     ARCHAEOLOGY = "Archaeology"
     COSMOLOGY = "Cosmology"
+    RHETORIC = "Rhetoric"
+
+    COMMUNICATION_1 = "Communication I"
+    COMMUNICATION_2 = "Communication II"
 
     NUMEROLOGY_1 = "Numerology I"
     NUMEROLOGY_2 = "Numerology II"
@@ -192,6 +196,9 @@ SKILL_DESCS = {
     " numerical entities.",
     SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
     SKILLS.NUMEROLOGY_3: "Untangle the calculus of intertwined dimensions.",
+    SKILLS.COMMUNICATION_1: "Learn how to communicate with others.",
+    SKILLS.COMMUNICATION_2: "How to make friends and influence people.",
+    SKILLS.RHETORIC: "Influence people. Spread your beliefs. Persuade the masses.",
 }
 
 SKILL_PREREQS = {
@@ -201,6 +208,7 @@ SKILL_PREREQS = {
     SKILLS.COSMOLOGY: [SKILLS.TIME],
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
     SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2],
+    SKILLS.COMMUNICATION_2: [SKILLS.COMMUNICATION_1, SKILLS.RHETORIC],
 }
 
 SKILL_STAT_PREREQS = {
@@ -216,6 +224,9 @@ SKILL_STAT_PREREQS = {
     SKILLS.NUMEROLOGY_1: {STATS.INT: 12},
     SKILLS.NUMEROLOGY_2: {STATS.INT: 15},
     SKILLS.NUMEROLOGY_3: {STATS.INT: 15},
+    SKILLS.COMMUNICATION_1: {STATS.CHA: 14},
+    SKILLS.COMMUNICATION_2: {STATS.CHA: 16},
+    SKILLS.RHETORIC: {STATS.INT: 12},
 }
 
 
@@ -465,6 +476,41 @@ EVENTS = {
                 skill_reqs=[],
                 checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15)],
                 success=EventResult(desc="",),
+                failure=None,
+            ),
+        ],
+    ),
+    "phone_call": Event(
+        desc="The phone rings. Do you want to pick it up?",
+        choices=[
+            EventChoice(
+                name="Pick up the phone.",
+                skill_reqs=[SKILLS.COMMUNICATION_1],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=17),],
+                success=EventResult(
+                    desc="You have a delightful conversation with a telemarketer."
+                    " You discover that both of you have a shared love of lemon"
+                    " poppyseed cake, mainecoon cats, and compact vacuum cleaners.",
+                    stat_mods={STATS.MON: -50, STATS.PTS: 50, STATS.CHA: 1},
+                ),
+                failure=EventResult(
+                    desc="You have an unfruitful conversation with a telemarketer."
+                    " It is difficult to understand their words because of their thick"
+                    " Abyssinian accent. You decide not to purchase a compact vacuum"
+                    " cleaner.",
+                    stat_mods={STATS.WIS: 1},
+                ),
+            ),
+            EventChoice(
+                name="Don't. It's a trap.",
+                skill_reqs=[],
+                checks=[],
+                success=EventResult(
+                    desc="You stare at the phone in fear, frozen in"
+                    " place. Your breathing quickens, your hands go"
+                    " cold, you fear that the worst may have come to pass.",
+                    stat_mods={STATS.WIS: -1}
+                ),
                 failure=None,
             ),
         ],
