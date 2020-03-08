@@ -630,6 +630,55 @@ EVENTS = {
             ),
         ],
     ),
+    "fountain": Event(
+        desc="Your throat is dry. A water fountain glints at you.",
+        choices=[
+            EventChoice(
+                name='Time to "[q]uaff" it, as they say.',
+                skill_reqs=[],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=25)],
+                success=EventResult(
+                    desc="Wow! This makes you feel great!"
+                    " A wisp of vapor escapes the fountain...",
+                    stat_mods={s: +1 for s in POINT_BUY_STATS},
+                ),
+                failure=EventResult(
+                    desc="You attract a water nymph! The water nymph disappears!",
+                    stat_mods={STATS.MON: -3},
+                ),
+            ),
+            EventChoice(
+                name="Hashtag #dip your sword in it.",
+                skill_reqs=[SKILLS.ONE_HANDED_COMBAT],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=25)],
+                success=EventResult(
+                    desc="You spot a gem in the sparkling waters!",
+                    stat_mods={STATS.MON: 5, STATS.PTS: 5},
+                ),
+                failure=EventResult(
+                    desc="An endless stream of snakes pours forth!",
+                    stat_mods={STATS.CON: -3},
+                ),
+            ),
+            EventChoice(
+                name="Hashtag #dip your FIST in it.",
+                skill_reqs=[SKILLS.UNARMED_COMBAT],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=35)],
+                success=EventResult(
+                    desc="You PUNCH a hole into the fountain, revealing two rubies!",
+                    stat_mods={STATS.MON: 10, STATS.PTS: 10, STATS.STR: 2},
+                ),
+                failure=EventResult(
+                    desc="Your hand explodes in pain after you punch the fountain.",
+                    stat_mods={STATS.CON: -3, STATS.REP: -1},
+                ),
+            ),
+            EventChoice(
+                name="Stay the hell away.",
+                success=EventResult(desc="", stat_mods={STATS.WIS: +1}),
+            ),
+        ],
+    ),
 }
 
 
