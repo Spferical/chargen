@@ -689,6 +689,18 @@ EVENTS = {
                     stat_mods={STATS.CON: -3, STATS.STR: -1},
                 ),
             ),
+            EventChoice(
+                name="Ask it to join your party.",
+                skill_reqs=[SKILLS.ANIMALS],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=30)],
+                success=EventResult(
+                    desc="Your invaluable pigeon ally tells you much of the city.",
+                    stat_mods={STATS.PET: 1, STATS.INT: 1, STATS.PTS: 3, STATS.LUC: 2},
+                ),
+                failure=EventResult(
+                    desc="It squawks at you and flies away.", stat_mods={STATS.REP: -1},
+                ),
+            ),
         ],
     ),
     "fountain": Event(
