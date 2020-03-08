@@ -678,8 +678,8 @@ class Game:
         no_prereqs = set(
             skill for skill in skills
             if ((skill not in SKILL_PREREQS
-                 or set(SKILL_PREREQS[skill]).difference(
-                     set(self.player.skills))) != {})
+                 or all(req_skill in self.player.skills
+                        for req_skill in SKILL_PREREQS[skill])))
             and skill not in self.player.skills)
         agenda = list(self.player.skills | no_prereqs)
         one_off = set()
