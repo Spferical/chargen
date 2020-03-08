@@ -137,6 +137,10 @@ class SKILLS(Enum):
     CLOVER = "Four-Leaf Clover"
     TIME = "Celestial Lore"
     HERBOLOGY = "Herbology"
+    EMPATHY = "Empathy"
+    DETECTIVE = "Detective"
+
+    NUMEROLOGY_1 = "Numerology I"
 
 
 SKILL_DESCS = {
@@ -149,6 +153,11 @@ SKILL_DESCS = {
     SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
     SKILLS.TIME: "Knowledge behind the motion of celestial bodies.",
     SKILLS.HERBOLOGY: "Ability to grow and nurture plants.",
+    SKILLS.EMPATHY: "Understand others. Understand yourself.",
+    SKILLS.DETECTIVE: "Read between the lines, uncover the mystery.",
+
+    SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
+    " numerical entities."
 }
 
 SKILL_PREREQS = {
@@ -161,6 +170,10 @@ SKILL_STAT_PREREQS = {
     SKILLS.JUMP: {STATS.STR: 10},
     SKILLS.CLIMB: {STATS.STR: 15},
     SKILLS.CLOVER: {STATS.LUC: 20},
+    SKILLS.EMPATHY: {STATS.WIS: 12},
+    SKILLS.DETECTIVE: {STATS.INT: 15},
+
+    SKILLS.NUMEROLOGY_1: {STATS.INT: 12}
 }
 
 
