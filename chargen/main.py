@@ -288,10 +288,11 @@ class EventResult:
 
 EVENTS = {
     "hunger": Event(
-        desc="You're hungry.",
+        desc="You feel pangs of hunger envelop your body. A strong desire to"
+        " ameliorate the cravings overcomes you.",
         choices=[
             EventChoice(
-                name="Buy bread",
+                name="Buy bread. Participate in the free market.",
                 skill_reqs=set(),
                 checks=[StatCheck(STATS.MON, num_dice=0, sides=4, dc=1)],
                 success=EventResult(
@@ -302,7 +303,7 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name="Grow bread",
+                name="Grow bread. Establish an independent farmering commune.",
                 skill_reqs={SKILLS.HERBOLOGY},
                 checks=(),
                 success=EventResult(
