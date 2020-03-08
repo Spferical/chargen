@@ -29,7 +29,7 @@ def save(name, char_info):
 
 
 def get_highscores():
-    return list(DATABASE_SESSION.query(Bones).order_by(Bones.PTS).limit(10))
+    return list(DATABASE_SESSION.query(Bones).order_by(Bones.PTS.desc()).limit(10))
 
 
 class CharInfo:
