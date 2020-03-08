@@ -589,12 +589,12 @@ def init_database():
     for skill in SKILLS:
         try:
             engine.execute(f"alter table bones add column {skill.name} Boolean")
-        except sqlalchemy.OperationalError:
+        except sqlalchemy.exc.OperationalError:
             pass
     for stat in STATS:
         try:
             engine.execute(f"alter table bones add column {skill.name} Integer")
-        except sqlalchemy.OperationalError:
+        except sqlalchemy.exc.OperationalError:
             pass
     metadata.create_all()
     sqlalchemy.orm.mapper(Bones, table)
