@@ -29,8 +29,7 @@ def save(name, char_info):
 
 
 def get_highscores():
-    top10 = list(DATABASE_SESSION.query(Bones).order_by(Bones.PTS).limit(10))
-    logging.info(top10)
+    return list(DATABASE_SESSION.query(Bones).order_by(Bones.PTS).limit(10))
 
 
 class CharInfo:
@@ -496,6 +495,7 @@ def init_database():
         "bones",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer(), primary_key=True),
+        sqlalchemy.Column("name", sqlalchemy.String()),
         *(sqlalchemy.Column(stat.name, sqlalchemy.Integer()) for stat in STATS),
         *(sqlalchemy.Column(skill.name, sqlalchemy.Boolean()) for skill in SKILLS),
     )
@@ -665,11 +665,21 @@ class GameOver(urwid.WidgetWrap):
         body.append(urwid.Text(f"${player.stats[STATS.MON]}"))
         body.append(urwid.Text(f"Reputation: {player.stats[STATS.REP]}"))
         body.append(urwid.Text(f"Score: {player.stats[STATS.PTS]}"))
-        body.append(urwid.Text("Killed by old age."))
-        body.append(urwid.Text(f'{date.today().strftime("%B, %d, %Y")}'))
+        body.append(urwid.Divider())
+        body.append(urwid.Text(f'{date.today().strftime("%B %d, %Y")}'))
         self.saved_text = urwid.Text("")
         body.append(self.saved_text)
         body.append(urwid.Divider("-"))
+        highscores_button = BetterButton("View Highscores")
+
+        def on_highscores_button(*args):
+            self.show_highscores()
+
+        urwid.connect_signal(highscores_button, "click", on_highscores_button)
+        self.highscores = urwid.Pile(
+            [urwid.AttrMap(highscores_button, None, focus_map="reversed")]
+        )
+        body.append(self.highscores)
         self.pile = urwid.Pile(body)
         self.saved = False
         super().__init__(urwid.Filler(self.pile, "top"))
@@ -685,6 +695,19 @@ class GameOver(urwid.WidgetWrap):
                 self.saved = True
                 self.saved_text.set_text([("green", "SAVED"), f" as {name}"])
             return True
+
+    def show_highscores(self):
+        self.highscores.contents.clear()
+        self.highscores.contents.append(
+            (urwid.Text("HIGHSCORES:"), self.highscores.options())
+        )
+        for info in get_highscores():
+            self.highscores.contents.append(
+                (
+                    urwid.Text(f" {info.name}: age {info.AGE}, score {info.PTS}"),
+                    self.highscores.options(),
+                )
+            )
 
 
 class Game:
