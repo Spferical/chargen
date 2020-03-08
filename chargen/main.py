@@ -625,7 +625,7 @@ class PlayerDisplay(urwid.WidgetWrap):
         self.stat_infos = {stat: urwid.Text("??") for stat in STATS}
         pile_contents = [self.class_info]
         pile_contents.extend([self.stat_infos[stat] for stat in STATS])
-        self.skill_pile = urwid.Pile([])
+        self.skill_pile = urwid.GridFlow([], 14, 1, 0, "left")
         pile_contents.append(self.skill_pile)
         self.pile = urwid.Pile(pile_contents)
         self.revealed_stats = set()
@@ -646,7 +646,9 @@ class PlayerDisplay(urwid.WidgetWrap):
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
-            self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
+            self.skill_pile.contents.append(
+                (urwid.Text(skill.value), self.skill_pile.options())
+            )
 
 
 class GameOver(urwid.WidgetWrap):
