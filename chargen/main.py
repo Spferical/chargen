@@ -1391,7 +1391,7 @@ class Game:
         self.player.stats[STATS.AGE] += 1
         yield from self.choose_skill()
         yield from self.play_hobby()
-        turns = 1
+        turns = 0
         while True:
             if self.mandatory_events.get(self.player.stats[STATS.AGE]):
                 yield from self.play_mandatory_event()
@@ -1399,12 +1399,12 @@ class Game:
             else:
                 yield from self.play_random_event()
             yield from self.choose_skill()
-            turns += 1
             if turns >= len(AGES):
                 yield self.popup_message("You die peacefully of old age",
                                          self.next_screen)
                 break
             self.player.stats[STATS.AGE] = AGES[turns]
+            turns += 1
             if self.player.stats[STATS.AGE] > 55:
                 yield self.aging_check()
             if self.player.stats[STATS.CON] <= 0:
