@@ -367,9 +367,12 @@ class Event:
 
 
 class EventChoice:
-    def __init__(self, name, success, skill_reqs=None, checks=None, failure=None):
+    def __init__(
+        self, name, success, stat_reqs=None, skill_reqs=None, checks=None, failure=None
+    ):
         self.name = name
         self.success = success
+        self.stat_reqs = stat_reqs if stat_reqs is not None else {}
         self.skill_reqs = skill_reqs if skill_reqs is not None else []
         self.checks = checks = checks if checks is not None else []
         self.failure = failure
@@ -862,8 +865,7 @@ EVENTS = {
             ),
             EventChoice(
                 name="Focus on the reading comprehension questions.",
-                skill_reqs=[SKILLS.DETECTIVE,
-                            SKILLS.IDENTIFY],
+                skill_reqs=[SKILLS.DETECTIVE, SKILLS.IDENTIFY],
                 checks=[
                     StatCheck(STATS.INT, num_dice=1, sides=20, dc=18),
                     StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
@@ -882,8 +884,7 @@ EVENTS = {
             ),
             EventChoice(
                 name="Focus on the oral examination.",
-                skill_reqs=[SKILLS.COMMUNICATION_2,
-                            SKILLS.IDENTIFY],
+                skill_reqs=[SKILLS.COMMUNICATION_2, SKILLS.IDENTIFY],
                 checks=[
                     StatCheck(STATS.CHA, num_dice=1, sides=20, dc=19),
                     StatCheck(STATS.LUC, num_dice=1, sides=20, dc=13),
@@ -940,6 +941,37 @@ EVENTS = {
             EventChoice(
                 name="a little girl!",
                 success=EventResult(stat_mods={STATS.PET: 1, STATS.PTS: 4}),
+            ),
+        ],
+    ),
+    "faire": Event(
+        prereq_fn=lambda player: player.stats[STATS.AGE] > 15
+        and player.stats[STATS.MON] >= 1,
+        desc="Lights and sounds are all around you at the sun festival!",
+        choices=[
+            EventChoice(
+                name="Joust to win prizes and the favor of the king.",
+                skill_reqs=[SKILLS.MOUNTED_COMBAT],
+                stat_reqs={STATS.PET: 1},
+                success=EventResult(
+                    stat_mods={STATS.REP: 3, STATS.PTS: 10, STATS.MON: 5}
+                ),
+            ),
+            EventChoice(
+                name="Learn of the future from a fortune-teller.",
+                stat_reqs={STATS.MON: 2},
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=100, dc=50)],
+                success=EventResult(
+                    stat_mods={STATS.MON: -2, STATS.LUC: 5, STATS.PTS: 2}
+                ),
+                failure=EventResult(stat_mods={STATS.MON: -2, STATS.LUC: -5}),
+            ),
+            EventChoice(
+                name="Play some carnival games.",
+                stat_reqs={STATS.MON: 1},
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=100, dc=50)],
+                success=EventResult(stat_mods={STATS.MON: 1, STATS.PTS: 1}),
+                failure=EventResult(stat_mods={STATS.MON: -1}),
             ),
         ],
     ),
@@ -1272,11 +1304,8 @@ class Game:
         return True
 
     def choose_skill(self):
-        skills = list(set(SKILLS).difference(self.player.skills))
-        if not any(self.player_can_choose_skill(skill) for skill in skills):
-            logging.warning("No skills available for player to choose!")
-            return
-
+        skills = set(SKILLS).difference(self.player.skills)
+        skills = skills.difference(HIDDEN_SKILLS)
         skill_graph = {skill: [] for skill in set(SKILLS)}
         for a1, a0s in SKILL_PREREQS.items():
             for a0 in a0s:
@@ -1286,12 +1315,10 @@ class Game:
             skill
             for skill in skills
             if (
-                (
-                    skill not in SKILL_PREREQS
-                    or all(
-                        req_skill in self.player.skills
-                        for req_skill in SKILL_PREREQS[skill]
-                    )
+                skill not in SKILL_PREREQS
+                or all(
+                    req_skill in self.player.skills
+                    for req_skill in SKILL_PREREQS[skill]
                 )
             )
             and skill not in self.player.skills
@@ -1306,9 +1333,14 @@ class Game:
                 ):
                     one_off.add(next_skill)
 
+        displayed_skills = one_off | no_prereqs
+        if not any(self.player_can_choose_skill(skill) for skill in displayed_skills):
+            logging.warning("No skills available for player to choose!")
+            return
+
         yield SplitMenu(
             "CHOOSE A SKILL",
-            list((one_off | no_prereqs).difference(HIDDEN_SKILLS)),
+            list(displayed_skills),
             display_fn=lambda c: c.value,
             description_fn=get_skill_desc,
             is_enabled_fn=self.player_can_choose_skill,
@@ -1406,8 +1438,11 @@ class Game:
             choice = selected
             self.next_screen()
 
-        def player_has_skill_prereqs(choice):
-            return self.player.skills.issuperset(choice.skill_reqs)
+        def player_has_prereqs(choice):
+            return self.player.skills.issuperset(choice.skill_reqs) and all(
+                self.player.skills[skill] > req
+                for (skill, req) in choice.stat_reqs.items()
+            )
 
         def description_fn(choice):
             desc = ""
@@ -1415,6 +1450,10 @@ class Game:
                 desc += "Required skills:\n"
             for skill in choice.skill_reqs:
                 desc += f" {skill.value}"
+            if choice.stat_reqs:
+                desc += "Required stats:\n"
+            for (stat, val) in choice.stat_reqs.items():
+                desc += f" {val} {stat.value}"
             return desc
 
         yield SplitMenu(
@@ -1422,7 +1461,7 @@ class Game:
             event.choices,
             description_fn=description_fn,
             display_fn=lambda choice: choice.name,
-            is_enabled_fn=player_has_skill_prereqs,
+            is_enabled_fn=player_has_prereqs,
             callback=on_choice,
         )
         logging.info(f"Player chose {choice.name}")
@@ -1441,10 +1480,10 @@ class Game:
         result = choice.success if overall_success else choice.failure
         msg += result.desc
         for (stat, mod) in result.stat_mods.items():
-            msg += f" {mod:+} {stat.value}"
+            msg += f"\n {mod:+} {stat.value}"
             self.player.stats[stat] += mod
         for skill in result.skills_gained:
-            msg += f" gained {skill.value}"
+            msg += f"\n gained {skill.value}"
             self.player.skills.add(skill)
         yield self.popup_message(msg, self.next_screen)
 
@@ -1485,8 +1524,9 @@ class Game:
                 yield from self.play_random_event()
             yield from self.choose_skill()
             if turns >= len(AGES):
-                yield self.popup_message("You die peacefully of old age",
-                                         self.next_screen)
+                yield self.popup_message(
+                    "You die peacefully of old age", self.next_screen
+                )
                 break
             self.player.stats[STATS.AGE] = AGES[turns]
             turns += 1
