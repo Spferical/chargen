@@ -176,7 +176,7 @@ SKILL_DESCS = {
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities.",
     SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
-    SKILLS.NUMEROLOGY_3: "Untangle the calculus of intertwined dimensions."
+    SKILLS.NUMEROLOGY_3: "Untangle the calculus of intertwined dimensions.",
 }
 
 SKILL_PREREQS = {
@@ -185,7 +185,7 @@ SKILL_PREREQS = {
     SKILLS.DETECTIVE: [SKILLS.IDENTIFY],
     SKILLS.COSMOLOGY: [SKILLS.TIME],
     SKILLS.NUMEROLOGY_2: [SKILLS.NUMEROLOGY_1],
-    SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2]
+    SKILLS.NUMEROLOGY_3: [SKILLS.NUMEROLOGY_2],
 }
 
 SKILL_STAT_PREREQS = {
@@ -308,8 +308,7 @@ EVENTS = {
                 success=EventResult(
                     desc="It's fascinating.", stat_mods={STATS.INT: +2}
                 ),
-                failure=EventResult(
-                    desc="It's too hard to understand.", stat_mods={}),
+                failure=EventResult(desc="It's too hard to understand.", stat_mods={}),
             ),
             EventChoice(
                 name="Splash in puddles",
@@ -324,8 +323,7 @@ EVENTS = {
                 name="Conduct a sun ritual",
                 skill_reqs={},
                 checks=[StatCheck(STATS.WIS, 1, 20, 20)],
-                success=EventResult(desc="The rain slows.",
-                                    stat_mods={STATS.WIS: +2},),
+                success=EventResult(desc="The rain slows.", stat_mods={STATS.WIS: +2},),
                 failure=EventResult(
                     desc="Nothing happens.", stat_mods={STATS.WIS: +1},
                 ),
@@ -339,17 +337,14 @@ EVENTS = {
                 name="Eat the green crap.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
-                success=EventResult(desc="You get it down.",
-                                    stat_mods={STATS.CON: +2}),
-                failure=EventResult(desc="You spit it out.",
-                                    stat_mods={STATS.CON: -1}),
+                success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
+                failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
             ),
             EventChoice(
                 name="Pretend to eat it.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 22)],
-                success=EventResult(desc="", stat_mods={
-                                    STATS.CON: -1, STATS.DEX: +2},),
+                success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
             ),
             EventChoice(
@@ -401,8 +396,7 @@ EVENTS = {
                     desc="You find a beautiful underground lake.",
                     stat_mods={STATS.WIS: +2},
                 ),
-                failure=EventResult(
-                    desc="You get lost in a maze of twisty passages."),
+                failure=EventResult(desc="You get lost in a maze of twisty passages."),
             ),
         ],
     ),
@@ -536,8 +530,7 @@ class PointBuy(urwid.WidgetWrap):
         ]
 
         def on_change(*args):
-            points_left_text.set_text(
-                f"Points left: {self.get_points_remaining()}")
+            points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
 
         stat_edit_column = [urwid.Text("STATS")]
         stat_bonus_column = [urwid.Text("CLASS BONUSES")]
@@ -567,8 +560,7 @@ class PointBuy(urwid.WidgetWrap):
             self.warning_text.set_text("")
         if key in ("enter", " "):
             if self.get_points_remaining() != 0:
-                self.warning_text.set_text(
-                    ("warn", "Must have zero points remaining."))
+                self.warning_text.set_text(("warn", "Must have zero points remaining."))
                 return
             stats = {
                 stat: editor.value() + self.bonuses.get(stat, 0)
@@ -606,17 +598,14 @@ class PlayerDisplay(urwid.WidgetWrap):
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
-            self.skill_pile.contents.append(
-                (urwid.Text(skill.value), ("pack", None)))
+            self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
 
 
 class Game:
     def __init__(self):
-        self.main_widget_container = urwid.Padding(
-            urwid.Edit(), left=1, right=1)
+        self.main_widget_container = urwid.Padding(urwid.Edit(), left=1, right=1)
         self.player_display = PlayerDisplay()
-        columns = urwid.Columns(
-            [self.main_widget_container, self.player_display])
+        columns = urwid.Columns([self.main_widget_container, self.player_display])
         padded = urwid.Padding(columns, left=2, right=2)
         overlay = urwid.Overlay(
             padded,
@@ -695,17 +684,27 @@ class Game:
                 skill_graph[a0].append(a1)
 
         no_prereqs = set(
-            skill for skill in skills
-            if ((skill not in SKILL_PREREQS
-                 or all(req_skill in self.player.skills
-                        for req_skill in SKILL_PREREQS[skill])))
-            and skill not in self.player.skills)
+            skill
+            for skill in skills
+            if (
+                (
+                    skill not in SKILL_PREREQS
+                    or all(
+                        req_skill in self.player.skills
+                        for req_skill in SKILL_PREREQS[skill]
+                    )
+                )
+            )
+            and skill not in self.player.skills
+        )
         agenda = list(self.player.skills | no_prereqs)
         one_off = set()
         for item in agenda:
             for next_skill in skill_graph[item]:
-                if next_skill not in no_prereqs \
-                   and next_skill not in self.player.skills:
+                if (
+                    next_skill not in no_prereqs
+                    and next_skill not in self.player.skills
+                ):
                     one_off.add(next_skill)
 
         yield SplitMenu(
@@ -758,8 +757,7 @@ class Game:
         return self.make_popup(layout)
 
     def close_popup(self):
-        self.set_main_widget(
-            self.main_widget_container.original_widget.bottom_w)
+        self.set_main_widget(self.main_widget_container.original_widget.bottom_w)
 
     def roll_stat_check(self, stat, num_dice, sides):
         return self.player.stats[stat] + self.dice(num_dice, sides)
