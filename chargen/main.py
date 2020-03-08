@@ -60,6 +60,9 @@ class CHAR_CLASSES(Enum):
     MAGIC_USER = "Magic User"
     CLERIC = "Cleric"
 
+    def __repr__(self):
+        return self.value
+
 
 class STATS(Enum):
     AGE = "LVL"
@@ -73,6 +76,9 @@ class STATS(Enum):
     LUC = "LUC"
     MON = "$$$"
     REP = "REP"
+
+    def __repr__(self):
+        return self.value
 
 
 POINT_BUY_STATS = [
@@ -147,6 +153,9 @@ class SKILLS(Enum):
     NUMEROLOGY_1 = "Numerology I"
     NUMEROLOGY_2 = "Numerology II"
     NUMEROLOGY_3 = "Numerology III"
+
+    def __repr__(self):
+        return self.value
 
 
 SKILL_DESCS = {
