@@ -946,25 +946,24 @@ class Game:
         yield from self.play_event(name)
 
     def play_mandatory_event(self):
+        age = self.player.stats[STATS.AGE]
         required_events = [
             name
-            for (name, event) in self.mandatory_events[self.player.stats[STATS.AGE]]
-            if event.prereq_fn(self.player)
+            for name in self.mandatory_events[age]
+            if EVENTS[name].prereq_fn(self.player)
         ]
 
         if len(required_events) > 0:
-            rand_idx = random.randint(0, len(required_events) - 1)
-            yield from self.play_event(required_events[rand_idx])
-            del required_events[rand_idx]
+            event_name = random.choice(required_events)
+            yield from self.play_event(event_name)
+            self.mandatory_events[age].remove(event_name)
 
     def create_mandatory_event_table(self):
         for name, event in EVENTS.items():
             if event.age_req is not None:
                 assert event.age_req >= 2
                 logging.debug(f"mandatory {name}")
-                self.mandatory_events.setdefault(event.age_req, []).append(
-                    (name, event)
-                )
+                self.mandatory_events.setdefault(event.age_req, []).append(name)
 
     def play_event(self, event_name):
         logging.info(f"Triggered {event_name} event")
@@ -1045,7 +1044,7 @@ class Game:
         yield from self.choose_skill()
         yield from self.play_hobby()
         while True:
-            if self.player.stats[STATS.AGE] in self.mandatory_events:
+            if self.mandatory_events.get(self.player.stats[STATS.AGE]):
                 yield from self.play_mandatory_event()
                 continue
             else:
