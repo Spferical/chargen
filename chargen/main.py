@@ -307,9 +307,15 @@ class Event:
         self.prereq_fn = prereq_fn
 
 
-EventChoice = namedtuple(
-    "EventChoice", ["name", "skill_reqs", "checks", "success", "failure"]
-)
+class EventChoice:
+    def __init__(self, name, success, skill_reqs=None, checks=None, failure=None):
+        self.name = name
+        self.success = success
+        self.skill_reqs = skill_reqs if skill_reqs is not None else []
+        self.checks = checks = checks if checks is not None else []
+        self.failure = failure
+        if self.failure is None:
+            assert len(self.checks) == 0, self.name
 
 
 class EventResult:
@@ -510,7 +516,9 @@ EVENTS = {
                 skill_reqs=[],
                 checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15)],
                 success=EventResult(desc="",),
-                failure=None,
+                failure=EventResult(
+                    desc="You are eaten by a giant ant.", stat_mods={STATS.CON: -100}
+                ),
             ),
         ],
     ),
