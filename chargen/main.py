@@ -29,7 +29,6 @@ class CharInfo:
             f"stats: {self.stats}"
             f"class: {self.char_class}"
             f"skills: {self.skills}"
-            f"age: {self.age}"
             ")"
         )
 
@@ -64,6 +63,7 @@ class CHAR_CLASSES(Enum):
 
 class STATS(Enum):
     AGE = "LVL"
+    PTS = "PTS"
     STR = "STR"
     DEX = "DEX"
     CON = "CON"
@@ -72,6 +72,7 @@ class STATS(Enum):
     CHA = "CHA"
     LUC = "LUC"
     MON = "$$$"
+    REP = "REP"
 
 
 POINT_BUY_STATS = [
@@ -140,6 +141,8 @@ class SKILLS(Enum):
     EMPATHY = "Empathy"
     DETECTIVE = "Detective"
     IDENTIFY = "Identify"
+    ARCHAEOLOGY = "Archaeology"
+
     NUMEROLOGY_1 = "Numerology I"
 
 
@@ -156,13 +159,15 @@ SKILL_DESCS = {
     SKILLS.EMPATHY: "Understand others. Understand yourself.",
     SKILLS.DETECTIVE: "Read between the lines, uncover the mystery.",
     SKILLS.IDENTIFY: "Ascertain the instrinsic nature of an entity.",
+    SKILLS.ARCHAEOLOGY: "Know human behavior by studying artifacts and landscapes.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
-    " numerical entities."
+    " numerical entities.",
 }
 
 SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
     SKILLS.DETECTIVE: [SKILLS.IDENTIFY]
+    SKILLS.ARCHAEOLOGY: [SKILLS.EMPATHY],
 }
 
 SKILL_STAT_PREREQS = {
@@ -235,7 +240,14 @@ class Event:
 EventChoice = namedtuple(
     "EventChoice", ["name", "skill_reqs", "checks", "success", "failure"]
 )
-EventResult = namedtuple("EventResult", ["desc", "stat_mods"])
+
+
+class EventResult:
+    def __init__(self, desc, stat_mods={}, trigger_events=()):
+        self.desc = desc
+        self.stat_mods = stat_mods
+        self.trigger_events = trigger_events
+
 
 EVENTS = {
     "hunger": Event(
@@ -328,6 +340,99 @@ EVENTS = {
                     stat_mods={STATS.WIS: +2, STATS.DEX: +2, STATS.CON: +2},
                 ),
                 failure=EventResult(desc="", stat_mods={},),
+            ),
+        ],
+    ),
+    "mountain": Event(
+        prereq_fn=lambda player: player.stats[STATS.AGE] > 5,
+        desc="You encounter a tall mountain. What do you do?",
+        choices=[
+            EventChoice(
+                name="Hike to the top!",
+                skill_reqs=[SKILLS.CLIMB],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=20)],
+                success=EventResult(
+                    desc="You make it to the top. What a beautiful view!",
+                    stat_mods={STATS.WIS: +1, STATS.STR: +1, STATS.REP: +1},
+                ),
+                failure=EventResult(
+                    desc="You collapse on the way up.", stat_mods={STATS.STR: +1}
+                ),
+            ),
+            EventChoice(
+                name="Investigate strange rock formation",
+                skill_reqs=[SKILLS.ARCHAEOLOGY],
+                checks=[StatCheck(STATS.INT, 1, 20, 23)],
+                success=EventResult(
+                    desc="It seems to have been built by gnomes long ago."
+                    " Some scrawlings on the surface indicate directions to"
+                    " an ancient dungeon.",
+                    stat_mods={},
+                    trigger_events=["scrawlings"],
+                ),
+                failure=EventResult(desc="", stat_mods={STATS.CON: -2}),
+            ),
+            EventChoice(
+                name="Explore caves",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
+                success=EventResult(
+                    desc="You find a beautiful underground lake.",
+                    stat_mods={STATS.WIS: +2},
+                ),
+                failure=EventResult(desc="You get lost in a maze of twisty passages."),
+            ),
+        ],
+    ),
+    "scrawlings": Event(
+        prereq_fn=lambda player: False,
+        desc="The scrawlings contain a map to a legendary amulet located"
+        " under the mountain.",
+        choices=[
+            EventChoice(
+                name="Follow the directions.",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
+                success=EventResult(
+                    desc="Your search leads you deep into the mountain...",
+                    trigger_events=["nethack"],
+                ),
+                failure=EventResult(desc="You cannot find it.",),
+            ),
+            EventChoice(
+                name="Forget about it.",
+                skill_reqs=[],
+                checks=[],
+                success=EventResult(desc="",),
+                failure=None,
+            ),
+        ],
+    ),
+    "nethack": Event(
+        prereq_fn=lambda player: False,
+        desc="You find yourself in the middle of an huge yet familiar dungeon.",
+        choices=[
+            EventChoice(
+                name="Search for the amulet.",
+                skill_reqs=[SKILLS.JUMP],
+                checks=[
+                    StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20),
+                    StatCheck(STATS.CON, num_dice=1, sides=20, dc=20),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=20),
+                ],
+                success=EventResult(
+                    desc="You find the Amulet of Yendor.", stat_mods={STATS.PTS: 1000}
+                ),
+                failure=EventResult(
+                    desc="You are eaten by a giant ant.", stat_mods={STATS.CON: -100}
+                ),
+            ),
+            EventChoice(
+                name="Escape while you still can.",
+                skill_reqs=[],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15)],
+                success=EventResult(desc="",),
+                failure=None,
             ),
         ],
     ),
@@ -465,6 +570,7 @@ class PlayerDisplay(urwid.WidgetWrap):
         super().__init__(urwid.Filler(self.pile, "top"))
 
     def update(self, char_info):
+        logging.debug(f"Player: {char_info}")
         if char_info.char_class is not None:
             self.class_info.set_text(char_info.char_class.value)
         for (stat, val) in char_info.stats.items():
@@ -621,9 +727,13 @@ class Game:
         if not events:
             logging.warning("Ran out of random events")
             return
-        (name, event) = random.choice(events)
-        self.seen_events.add(name)
-        logging.info(f"Triggered {name} event")
+        (name, _) = random.choice(events)
+        yield from self.play_event(name)
+
+    def play_event(self, event_name):
+        logging.info(f"Triggered {event_name} event")
+        self.seen_events.add(event_name)
+        event = EVENTS[event_name]
         choice = None
 
         def on_choice(selected):
@@ -670,6 +780,9 @@ class Game:
             self.player.stats[stat] += mod
         yield self.popup_message(msg, self.next_screen)
 
+        for event_name in result.trigger_events:
+            yield from self.play_event(event_name)
+
     def play_hobby(self):
         yield self.choose_hobby()
         if self.player.hobby == HOBBY.READ and SKILLS.READ not in self.player.skills:
@@ -696,6 +809,7 @@ class Game:
         yield from self.play_hobby()
         while True:
             yield from self.play_random_event()
+            yield self.choose_skill()
             self.player.stats[STATS.AGE] += 1
             if self.player.stats[STATS.AGE] > 5:
                 yield self.aging_check()
