@@ -139,7 +139,7 @@ class SKILLS(Enum):
     HERBOLOGY = "Herbology"
     EMPATHY = "Empathy"
     DETECTIVE = "Detective"
-
+    IDENTIFY = "Identify"
     NUMEROLOGY_1 = "Numerology I"
 
 
@@ -155,13 +155,14 @@ SKILL_DESCS = {
     SKILLS.HERBOLOGY: "Ability to grow and nurture plants.",
     SKILLS.EMPATHY: "Understand others. Understand yourself.",
     SKILLS.DETECTIVE: "Read between the lines, uncover the mystery.",
-
+    SKILLS.IDENTIFY: "Ascertain the instrinsic nature of an entity.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities."
 }
 
 SKILL_PREREQS = {
     SKILLS.WRITE: [SKILLS.READ],
+    SKILLS.DETECTIVE: [SKILLS.IDENTIFY]
 }
 
 SKILL_STAT_PREREQS = {
@@ -171,9 +172,9 @@ SKILL_STAT_PREREQS = {
     SKILLS.CLIMB: {STATS.STR: 15},
     SKILLS.CLOVER: {STATS.LUC: 20},
     SKILLS.EMPATHY: {STATS.WIS: 12},
+    SKILLS.IDENTIFY: {STATS.INT: 13},
     SKILLS.DETECTIVE: {STATS.INT: 15},
-
-    SKILLS.NUMEROLOGY_1: {STATS.INT: 12}
+    SKILLS.NUMEROLOGY_1: {STATS.INT: 12},
 }
 
 
@@ -274,7 +275,8 @@ EVENTS = {
                 success=EventResult(
                     desc="It's fascinating.", stat_mods={STATS.INT: +2}
                 ),
-                failure=EventResult(desc="It's too hard to understand.", stat_mods={}),
+                failure=EventResult(
+                    desc="It's too hard to understand.", stat_mods={}),
             ),
             EventChoice(
                 name="Splash in puddles",
@@ -289,7 +291,8 @@ EVENTS = {
                 name="Conduct a sun ritual",
                 skill_reqs={},
                 checks=[StatCheck(STATS.WIS, 1, 20, 20)],
-                success=EventResult(desc="The rain slows.", stat_mods={STATS.WIS: +2},),
+                success=EventResult(desc="The rain slows.",
+                                    stat_mods={STATS.WIS: +2},),
                 failure=EventResult(
                     desc="Nothing happens.", stat_mods={STATS.WIS: +1},
                 ),
@@ -303,14 +306,17 @@ EVENTS = {
                 name="Eat the green crap.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.WIS, num_dice=1, sides=20, dc=20)],
-                success=EventResult(desc="You get it down.", stat_mods={STATS.CON: +2}),
-                failure=EventResult(desc="You spit it out.", stat_mods={STATS.CON: -1}),
+                success=EventResult(desc="You get it down.",
+                                    stat_mods={STATS.CON: +2}),
+                failure=EventResult(desc="You spit it out.",
+                                    stat_mods={STATS.CON: -1}),
             ),
             EventChoice(
                 name="Pretend to eat it.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.DEX, 1, 20, 22)],
-                success=EventResult(desc="", stat_mods={STATS.CON: -1, STATS.DEX: +2},),
+                success=EventResult(desc="", stat_mods={
+                                    STATS.CON: -1, STATS.DEX: +2},),
                 failure=EventResult(desc="", stat_mods={STATS.CON: -2},),
             ),
             EventChoice(
@@ -403,7 +409,8 @@ class PointBuy(urwid.WidgetWrap):
         ]
 
         def on_change(*args):
-            points_left_text.set_text(f"Points left: {self.get_points_remaining()}")
+            points_left_text.set_text(
+                f"Points left: {self.get_points_remaining()}")
 
         stat_edit_column = [urwid.Text("STATS")]
         stat_bonus_column = [urwid.Text("CLASS BONUSES")]
@@ -433,7 +440,8 @@ class PointBuy(urwid.WidgetWrap):
             self.warning_text.set_text("")
         if key in ("enter", " "):
             if self.get_points_remaining() != 0:
-                self.warning_text.set_text(("warn", "Must have zero points remaining."))
+                self.warning_text.set_text(
+                    ("warn", "Must have zero points remaining."))
                 return
             stats = {
                 stat: editor.value() + self.bonuses.get(stat, 0)
@@ -470,14 +478,17 @@ class PlayerDisplay(urwid.WidgetWrap):
                 self.stat_infos[stat].set_text(f"{stat.value}: {val}")
         self.skill_pile.contents.clear()
         for skill in sorted(char_info.skills, key=lambda s: s.value):
-            self.skill_pile.contents.append((urwid.Text(skill.value), ("pack", None)))
+            self.skill_pile.contents.append(
+                (urwid.Text(skill.value), ("pack", None)))
 
 
 class Game:
     def __init__(self):
-        self.main_widget_container = urwid.Padding(urwid.Edit(), left=1, right=1)
+        self.main_widget_container = urwid.Padding(
+            urwid.Edit(), left=1, right=1)
         self.player_display = PlayerDisplay()
-        columns = urwid.Columns([self.main_widget_container, self.player_display])
+        columns = urwid.Columns(
+            [self.main_widget_container, self.player_display])
         padded = urwid.Padding(columns, left=2, right=2)
         overlay = urwid.Overlay(
             padded,
@@ -595,7 +606,8 @@ class Game:
         return self.make_popup(layout)
 
     def close_popup(self):
-        self.set_main_widget(self.main_widget_container.original_widget.bottom_w)
+        self.set_main_widget(
+            self.main_widget_container.original_widget.bottom_w)
 
     def roll_stat_check(self, stat, num_dice, sides):
         return self.player.stats[stat] + self.dice(num_dice, sides)
