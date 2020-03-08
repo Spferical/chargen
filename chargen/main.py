@@ -667,6 +667,7 @@ class Game:
         msg += result.desc
         for (stat, mod) in result.stat_mods.items():
             msg += f" {mod:+} {stat.value}"
+            self.player.stats[stat] += mod
         yield self.popup_message(msg, self.next_screen)
 
     def play_hobby(self):
