@@ -22,6 +22,12 @@ PALETTE = [
 ]
 
 
+def is_prime(n):
+    if n < 2:
+        return False
+    return all(n % i for i in range(2, n))
+
+
 def save(name, char_info):
     bones = Bones(name, char_info)
     DATABASE_SESSION.add(bones)
@@ -158,6 +164,7 @@ class SKILLS(Enum):
     READ = "Decipher Runes"
     WRITE = "Inscription"
     CLOVER = "Four-Leaf Clover"
+    PRIMED = "Five-Leaf Clover"
     TIME = "Celestial Lore"
     HERBOLOGY = "Herbology"
     EMPATHY = "Empathy"
@@ -228,6 +235,7 @@ SKILL_DESCS = {
     SKILLS.WRITE: "Store your mystical secrets for later."
     " Necessary for the creation of magical scrolls.",
     SKILLS.CLOVER: "ALL d4 rolls become d8 rolls.",
+    SKILLS.PRIMED: "Reroll ALL prime numbers.",
     SKILLS.TIME: "Knowledge behind the motion of celestial bodies.",
     SKILLS.HERBOLOGY: "Grow and nurture plants.",
     SKILLS.EMPATHY: "Understand others. Understand yourself.",
@@ -267,6 +275,7 @@ SKILL_PREREQS = {
     SKILLS.ONE_HANDED_COMBAT: [SKILLS.UNARMED_COMBAT],
     SKILLS.TWO_HANDED_COMBAT: [SKILLS.UNARMED_COMBAT],
     SKILLS.THREE_HANDED_COMBAT: [SKILLS.ONE_HANDED_COMBAT, SKILLS.TWO_HANDED_COMBAT],
+    SKILLS.PRIMED: [SKILLS.CLOVER],
 }
 
 SKILL_STAT_PREREQS = {
@@ -275,6 +284,7 @@ SKILL_STAT_PREREQS = {
     SKILLS.JUMP: {STATS.STR: 10},
     SKILLS.CLIMB: {STATS.STR: 15},
     SKILLS.CLOVER: {STATS.LUC: 20},
+    SKILLS.PRIMED: {STATS.LUC: 25},
     SKILLS.EMPATHY: {STATS.WIS: 12},
     SKILLS.IDENTIFY: {STATS.INT: 13},
     SKILLS.DETECTIVE: {STATS.INT: 15},
@@ -1437,7 +1447,13 @@ class Game:
         """ Rolls NdS """
         if SKILLS.CLOVER in self.player.skills and s == 4:
             s = 8
-        return sum(random.randint(1, s) for _ in range(n))
+        total = 0
+        for _ in range(n):
+            roll = random.randint(1, s)
+            while is_prime(roll):
+                roll = random.randint(1, s)
+            total += roll
+        return total
 
     def set_main_widget(self, widget):
         self.main_widget_container.original_widget = widget
