@@ -170,6 +170,7 @@ class SKILLS(Enum):
 
     COMMUNICATION_1 = "Communication I"
     COMMUNICATION_2 = "Communication II"
+    COMMUNICATION_3 = "Communication III"
 
     NUMEROLOGY_1 = "Numerology I"
     NUMEROLOGY_2 = "Numerology II"
@@ -211,6 +212,7 @@ HIDDEN_SKILLS = {
 
 SKILL_DESCS = {
     SKILLS.JUMP: "You can jump very high. Gives +5 on jump height rolls.",
+    SKILLS.ACTOR: "Do the clown things.",
     SKILLS.CLIMB: "You can scale ropes, trees, walls, and more with ease."
     " Adds a d12 to rolls involving scaling obstacles.",
     SKILLS.READ: "Parse the secrets scrawled onto walls and other places.",
@@ -231,6 +233,7 @@ SKILL_DESCS = {
     SKILLS.NUMEROLOGY_3: "Untangle the calculus of intertwined dimensions.",
     SKILLS.COMMUNICATION_1: "Learn how to communicate with others.",
     SKILLS.COMMUNICATION_2: "How to make friends and influence people.",
+    SKILLS.COMMUNICATION_3: "Words words words.",
     SKILLS.RHETORIC: "Influence people. Spread your beliefs. Persuade the masses.",
     SKILLS.UNARMED_COMBAT: "Fight with your bare fists.",
     SKILLS.MOUNTED_COMBAT: "Fight atop a trusted steed.",
@@ -281,7 +284,7 @@ SKILL_STAT_PREREQS = {
 
 
 def get_skill_desc(skill):
-    desc = SKILL_DESCS[skill]
+    desc = SKILL_DESCS.get(skill, "")
     if skill in SKILL_PREREQS:
         desc += f'\n\nPrereqs: {", ".join(s.value for s in SKILL_PREREQS[skill])}'
     if skill in SKILL_STAT_PREREQS:
@@ -932,13 +935,13 @@ EVENTS = {
         ],
     ),
     "job": Event(
-        prereq_fn=lambda player: player.age > 18,
+        prereq_fn=lambda player: player.stats[STATS.AGE] > 18,
         desc="It is time to choose a profession. Every child of the village"
         " is given a role once they come of age. To what shall you dedicate the"
         " rest of your existence?",
         choices=[
             EventChoice(
-                name='Blacksmith.',
+                name="Blacksmith.",
                 skill_reqs=[],
                 checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=30)],
                 success=EventResult(
@@ -947,7 +950,7 @@ EVENTS = {
                     " blacksmiths in the modern era. It is difficult to find"
                     " work.",
                     stat_mods={STATS.STR: 5, STATS.MON: 2},
-                    skills_gained=[SKILLS.BLACKSMITH]
+                    skills_gained=[SKILLS.BLACKSMITH],
                 ),
                 failure=EventResult(
                     desc="You aren't strong enough to become a blacksmith."
@@ -956,14 +959,14 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Cat Burglar.',
+                name="Cat Burglar.",
                 skill_reqs=[SKILLS.CLIMB, SKILLS.JUMP],
                 checks=[StatCheck(STATS.DEX, num_dice=1, sides=20, dc=30)],
                 success=EventResult(
                     desc="You have decided to become a cat burglar."
                     " You steal prized jewlery from across the empire.",
                     stat_mods={STATS.DEX: 5, STATS.MON: 2000, STATS.REP: -10},
-                    skills_gained=[SKILLS.CAT_BURGLAR]
+                    skills_gained=[SKILLS.CAT_BURGLAR],
                 ),
                 failure=EventResult(
                     desc="You get caught on one of your heists. You suffer"
@@ -972,16 +975,18 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Insurance agent.',
+                name="Insurance agent.",
                 skill_reqs=[SKILLS.READ, SKILLS.NUMEROLOGY_1],
-                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=20)],
+                checks=[
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=20),
+                ],
                 success=EventResult(
                     desc="You have decided to become an insurance agent."
                     " Be prepared to file claims for the rest of your life.",
                     stat_mods={STATS.INT: 1, STATS.CHA: 1, STATS.MON: 100},
-                    skills_gained=[SKILLS.INSURANCE_AGENT]
+                    skills_gained=[SKILLS.INSURANCE_AGENT],
                 ),
                 failure=EventResult(
                     desc="You failed the interview. Try again later.",
@@ -989,20 +994,18 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Private Investigator.',
-                skill_reqs=[SKILLS.DETETIVE,
-                            SKILLS.IDENTIFY],
-                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.INT, num_dice=1, sides=20, dc=25),
-                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=10)],
+                name="Private Investigator.",
+                skill_reqs=[SKILLS.DETECTIVE, SKILLS.IDENTIFY],
+                checks=[
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.INT, num_dice=1, sides=20, dc=25),
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=10),
+                ],
                 success=EventResult(
                     desc="You have decided to become a world-class detective."
                     " Investigate suspects and stop crime.",
-                    stat_mods={STATS.INT: 1,
-                               STATS.WIS: 1,
-                               STATS.MON: 50,
-                               STATS.REP: 2},
-                    skills_gained=[SKILLS.PRIVATE_INVESTIGATOR]
+                    stat_mods={STATS.INT: 1, STATS.WIS: 1, STATS.MON: 50, STATS.REP: 2},
+                    skills_gained=[SKILLS.PRIVATE_INVESTIGATOR],
                 ),
                 failure=EventResult(
                     desc="You failed the interview. Try again later.",
@@ -1010,15 +1013,17 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Miner.',
+                name="Miner.",
                 skill_reqs=[],
-                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=18),
-                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15)],
+                checks=[
+                    StatCheck(STATS.STR, num_dice=1, sides=20, dc=18),
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                ],
                 success=EventResult(
                     desc="You have decided to become a miner."
                     " Your life expectancy and future job prospects are slim.",
                     stat_mods={STATS.STR: 2, STATS.MON: 10, STATS.CON: -3},
-                    skills_gained=[SKILLS.TWO_HANDED_COMBAT, SKILLS.MINER]
+                    skills_gained=[SKILLS.TWO_HANDED_COMBAT, SKILLS.MINER],
                 ),
                 failure=EventResult(
                     desc="You failed the interview. Try again later.",
@@ -1026,15 +1031,17 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Actor.',
+                name="Actor.",
                 skill_reqs=[SKILLS.RHETORIC],
-                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
-                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=30)],
+                checks=[
+                    StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=30),
+                ],
                 success=EventResult(
                     desc="You have decided to become an actor."
                     " You entertain crowds across the world.",
                     stat_mods={STATS.CHA: 5, STATS.INT: 1, STATS.MON: 5},
-                    skills_gained=[SKILLS.ACTOR]
+                    skills_gained=[SKILLS.ACTOR],
                 ),
                 failure=EventResult(
                     desc="You failed the interview. Try again later.",
@@ -1042,7 +1049,7 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Astronomer.',
+                name="Astronomer.",
                 skill_reqs=[SKILLS.COSMOLOGY],
                 checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=25)],
                 success=EventResult(
@@ -1050,7 +1057,7 @@ EVENTS = {
                     " You discover wonderful and mysterious celestial bodies"
                     " across the universe.",
                     stat_mods={STATS.INT: 2, STATS.MON: 10},
-                    skills_gained=[SKILLS.ASTRONOMER]
+                    skills_gained=[SKILLS.ASTRONOMER],
                 ),
                 failure=EventResult(
                     desc="You failed the interview. Try again later.",
@@ -1058,14 +1065,14 @@ EVENTS = {
                 ),
             ),
             EventChoice(
-                name='Politician.',
+                name="Politician.",
                 skill_reqs=[SKILLS.RHETORIC, SKILLS.COMMUNICATION_3],
                 checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=40)],
                 success=EventResult(
                     desc="You have decided to become a politician."
                     " Have fun on Capitol Hill.",
                     stat_mods={STATS.CHA: 5, STATS.MON: 50, STATS.REP: 20},
-                    skills_gained=[SKILLS.POLITICIAN]
+                    skills_gained=[SKILLS.POLITICIAN],
                 ),
                 failure=EventResult(
                     desc="No one voted for you. Try again later.",
@@ -1602,8 +1609,8 @@ class Game:
 
         def player_has_prereqs(choice):
             return self.player.skills.issuperset(choice.skill_reqs) and all(
-                self.player.skills[skill] > req
-                for (skill, req) in choice.stat_reqs.items()
+                self.player.stats[stat] > req
+                for (stat, req) in choice.stat_reqs.items()
             )
 
         def description_fn(choice):
