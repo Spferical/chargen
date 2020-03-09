@@ -174,6 +174,7 @@ class SKILLS(Enum):
     COSMOLOGY = "Cosmology"
     RHETORIC = "Rhetoric"
     ANIMALS = "Animal Empathy"
+    STATECRAFT = "Statecraft"
 
     COMMUNICATION_1 = "Communication I"
     COMMUNICATION_2 = "Communication II"
@@ -244,6 +245,7 @@ SKILL_DESCS = {
     SKILLS.ARCHAEOLOGY: "Know human behavior by studying artifacts and landscapes.",
     SKILLS.COSMOLOGY: "Unlock the secrets of the universe.",
     SKILLS.ANIMALS: "Allows you to communicate with animals and magical beasts.",
+    SKILLS.STATECRAFT: "The basics of running a municipality.",
     SKILLS.NUMEROLOGY_1: "Divine the relationship between abstract"
     " numerical entities.",
     SKILLS.NUMEROLOGY_2: "Unveil the mystery of geometric forms.",
@@ -276,6 +278,7 @@ SKILL_PREREQS = {
     SKILLS.TWO_HANDED_COMBAT: [SKILLS.UNARMED_COMBAT],
     SKILLS.THREE_HANDED_COMBAT: [SKILLS.ONE_HANDED_COMBAT, SKILLS.TWO_HANDED_COMBAT],
     SKILLS.PRIMED: [SKILLS.CLOVER],
+    SKILLS.STATECRAFT: [SKILLS.RHETORIC],
 }
 
 SKILL_STAT_PREREQS = {
@@ -603,7 +606,7 @@ EVENTS = {
                     StatCheck(STATS.LUC, num_dice=1, sides=20, dc=20),
                 ],
                 success=EventResult(
-                    desc="You find the Amulet of Yendor.", stat_mods={STATS.PTS: 1000}
+                    desc="You find the Amulet of Yendor.", stat_mods={STATS.PTS: 20}
                 ),
                 failure=EventResult(
                     desc="You are eaten by a giant ant.", stat_mods={STATS.CON: -100}
@@ -805,7 +808,7 @@ EVENTS = {
                 success=EventResult(
                     desc="Arithmancy has always been your strength. You pass"
                     " the trials with flying colors.",
-                    stat_mods={STATS.INT: 1},
+                    stat_mods={STATS.INT: 1, STATS.PTS: 1},
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -824,7 +827,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You decipher the runes with ease. You pass"
                     " the trials with flying colors",
-                    stat_mods={STATS.INT: 1},
+                    stat_mods={STATS.INT: 1, STATS.PTS: 1},
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -843,7 +846,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You give an oral presentation. You pass the"
                     " trials with flying colors.",
-                    stat_mods={STATS.INT: 1},
+                    stat_mods={STATS.INT: 1, STATS.PTS: 1},
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -860,7 +863,7 @@ EVENTS = {
                     desc="You somehow manage to correctly guess the answers to"
                     " all 40 multiple-choice questions on the exam. You feel"
                     " that the random number god is displeased with you.",
-                    stat_mods={STATS.LUC: 1},
+                    stat_mods={STATS.LUC: 1, STATS.PTS: 2},
                     skills_gained=[SKILLS.MIDDLE_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -888,7 +891,7 @@ EVENTS = {
                 success=EventResult(
                     desc="Arithmancy has always been your strength. You pass"
                     " the trials with flying colors.",
-                    stat_mods={STATS.INT: 2},
+                    stat_mods={STATS.INT: 2, STATS.PTS: 2},
                     skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -907,7 +910,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You decipher the runes with ease. You pass"
                     " the trials with flying colors",
-                    stat_mods={STATS.INT: 2},
+                    stat_mods={STATS.INT: 2, STATS.PTS: 2},
                     skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -926,7 +929,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You give an oral presentation. You pass the"
                     " trials with flying colors.",
-                    stat_mods={STATS.INT: 1, STATS.CHA: 1},
+                    stat_mods={STATS.INT: 1, STATS.CHA: 1, STATS.PTS: 2},
                     skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -943,7 +946,7 @@ EVENTS = {
                     desc="You somehow manage to correctly guess the answers to"
                     " all 80 multiple-choice questions on the exam. You feel"
                     " that the random number god is displeased with you.",
-                    stat_mods={STATS.LUC: 1},
+                    stat_mods={STATS.LUC: 1, STATS.PTS: 3},
                     skills_gained=[SKILLS.HIGH_SCHOOL_DIPLOMA],
                 ),
                 failure=EventResult(
@@ -1092,7 +1095,7 @@ EVENTS = {
                 success=EventResult(
                     desc="You have decided to become a politician."
                     " Have fun on Capitol Hill.",
-                    stat_mods={STATS.CHA: 5, STATS.MON: 50, STATS.REP: 20},
+                    stat_mods={STATS.CHA: 5, STATS.MON: 50, STATS.REP: 10},
                     skills_gained=[SKILLS.POLITICIAN],
                 ),
                 failure=EventResult(
@@ -1156,12 +1159,53 @@ EVENTS = {
             EventChoice(
                 name="Perform tricks to wow festival goers.",
                 checks=[StatCheck(STATS.DEX, num_dice=1, sides=20, dc=25)],
-                success=EventResult(stat_mods={STATS.MON: 5, STATS.PTS: 5}),
+                success=EventResult(stat_mods={STATS.MON: 5, STATS.PTS: 5, STATS.REP: +2}),
                 failure=EventResult(stat_mods={STATS.REP: -1}),
             ),
             EventChoice(
                 name="Just take it all in.",
                 success=EventResult(stat_mods={STATS.CHA: 1, STATS.PTS: 1}),
+            ),
+        ],
+    ),
+    "president": Event(
+        desc="The presidential election is coming up.",
+        prereq_fn=lambda player: player.stats[STATS.AGE] >= 35,
+        choices=[
+            EventChoice(
+                name="Run for President",
+                skill_reqs={SKILLS.COMMUNICATION_3, SKILLS.STATECRAFT},
+                checks=[
+                    StatCheck(STATS.CHA, num_dice=1, sides=20, dc=40),
+                    StatCheck(STATS.REP, num_dice=1, sides=10, dc=20),
+                ],
+                success=EventResult(
+                    desc="", stat_mods={STATS.REP: +2, STATS.PTS: +10, STATS.MON: +2}
+                ),
+                failure=EventResult(stat_mods={STATS.PTS: +1, STATS.MON: -2}),
+            ),
+            EventChoice(
+                name="Help a campaign.",
+                skill_reqs={SKILLS.COMMUNICATION_1},
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=40)],
+                success=EventResult(desc="", stat_mods={STATS.PTS: +1, STATS.MON: +1}),
+                failure=EventResult(),
+            ),
+            EventChoice(
+                name="Vote red.",
+                success=EventResult(desc="", stat_mods={STATS.PTS: +1}),
+            ),
+            EventChoice(
+                name="Vote blue.",
+                success=EventResult(desc="", stat_mods={STATS.PTS: +1}),
+            ),
+            EventChoice(
+                name="Vote purple.",
+                success=EventResult(desc="", stat_mods={STATS.PTS: +1}),
+            ),
+            EventChoice(
+                name="Vote orange.",
+                success=EventResult(desc="", stat_mods={STATS.PTS: +1}),
             ),
         ],
     ),
