@@ -187,6 +187,16 @@ class SKILLS(Enum):
     MASTERS_DEGREE = "Master's Degree"
     DOCTORAL_DEGREE = "Doctoral Degree"
 
+    INSURANCE_AGENT = "Insurance Agent"
+    BLACKSMITH = "Blacksmith"
+    CAT_BURGLAR = "Cat Burglar"
+    SOFTWARE_ENGINEER = "Software Engineer"
+    PRIVATE_INVESTIGATOR = "Private Investigator"
+    MINER = "Miner"
+    ACTOR = "Actor"
+    ASTRONOMER = "Astronomer"
+    POLITICIAN = "Politician"
+
     def __repr__(self):
         return self.value
 
@@ -917,6 +927,149 @@ EVENTS = {
                     " Your performance is comparable to a randomly-guessing"
                     " monkey.",
                     stat_mods={STATS.REP: -1},
+                ),
+            ),
+        ],
+    ),
+    "job": Event(
+        prereq_fn=lambda player: player.age > 18,
+        desc="It is time to choose a profession. Every child of the village"
+        " is given a role once they come of age. To what shall you dedicate the"
+        " rest of your existence?",
+        choices=[
+            EventChoice(
+                name='Blacksmith.',
+                skill_reqs=[],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=30)],
+                success=EventResult(
+                    desc="You have decided to become a blacksmith."
+                    " Unfortunately, it looks like there aren't that many"
+                    " blacksmiths in the modern era. It is difficult to find"
+                    " work.",
+                    stat_mods={STATS.STR: 5, STATS.MON: 2},
+                    skills_gained=[SKILLS.BLACKSMITH]
+                ),
+                failure=EventResult(
+                    desc="You aren't strong enough to become a blacksmith."
+                    " Try again later.",
+                    stat_mods={STATS.MON: -3},
+                ),
+            ),
+            EventChoice(
+                name='Cat Burglar.',
+                skill_reqs=[SKILLS.CLIMB, SKILLS.JUMP],
+                checks=[StatCheck(STATS.DEX, num_dice=1, sides=20, dc=30)],
+                success=EventResult(
+                    desc="You have decided to become a cat burglar."
+                    " You steal prized jewlery from across the empire.",
+                    stat_mods={STATS.DEX: 5, STATS.MON: 2000, STATS.REP: -10},
+                    skills_gained=[SKILLS.CAT_BURGLAR]
+                ),
+                failure=EventResult(
+                    desc="You get caught on one of your heists. You suffer"
+                    " greatly in prison.",
+                    stat_mods={STATS.MON: -300, STATS.CON: -5},
+                ),
+            ),
+            EventChoice(
+                name='Insurance agent.',
+                skill_reqs=[SKILLS.READ, SKILLS.NUMEROLOGY_1],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.INT, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=20)],
+                success=EventResult(
+                    desc="You have decided to become an insurance agent."
+                    " Be prepared to file claims for the rest of your life.",
+                    stat_mods={STATS.INT: 1, STATS.CHA: 1, STATS.MON: 100},
+                    skills_gained=[SKILLS.INSURANCE_AGENT]
+                ),
+                failure=EventResult(
+                    desc="You failed the interview. Try again later.",
+                    stat_mods={STATS.MON: -50},
+                ),
+            ),
+            EventChoice(
+                name='Private Investigator.',
+                skill_reqs=[SKILLS.DETETIVE,
+                            SKILLS.IDENTIFY],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.INT, num_dice=1, sides=20, dc=25),
+                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=10)],
+                success=EventResult(
+                    desc="You have decided to become a world-class detective."
+                    " Investigate suspects and stop crime.",
+                    stat_mods={STATS.INT: 1,
+                               STATS.WIS: 1,
+                               STATS.MON: 50,
+                               STATS.REP: 2},
+                    skills_gained=[SKILLS.PRIVATE_INVESTIGATOR]
+                ),
+                failure=EventResult(
+                    desc="You failed the interview. Try again later.",
+                    stat_mods={STATS.MON: -50},
+                ),
+            ),
+            EventChoice(
+                name='Miner.',
+                skill_reqs=[],
+                checks=[StatCheck(STATS.STR, num_dice=1, sides=20, dc=18),
+                        StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15)],
+                success=EventResult(
+                    desc="You have decided to become a miner."
+                    " Your life expectancy and future job prospects are slim.",
+                    stat_mods={STATS.STR: 2, STATS.MON: 10, STATS.CON: -3},
+                    skills_gained=[SKILLS.TWO_HANDED_COMBAT, SKILLS.MINER]
+                ),
+                failure=EventResult(
+                    desc="You failed the interview. Try again later.",
+                    stat_mods={STATS.MON: -50},
+                ),
+            ),
+            EventChoice(
+                name='Actor.',
+                skill_reqs=[SKILLS.RHETORIC],
+                checks=[StatCheck(STATS.LUC, num_dice=1, sides=20, dc=15),
+                        StatCheck(STATS.CHA, num_dice=1, sides=20, dc=30)],
+                success=EventResult(
+                    desc="You have decided to become an actor."
+                    " You entertain crowds across the world.",
+                    stat_mods={STATS.CHA: 5, STATS.INT: 1, STATS.MON: 5},
+                    skills_gained=[SKILLS.ACTOR]
+                ),
+                failure=EventResult(
+                    desc="You failed the interview. Try again later.",
+                    stat_mods={STATS.MON: -50},
+                ),
+            ),
+            EventChoice(
+                name='Astronomer.',
+                skill_reqs=[SKILLS.COSMOLOGY],
+                checks=[StatCheck(STATS.INT, num_dice=1, sides=20, dc=25)],
+                success=EventResult(
+                    desc="You have decided to become an astronomer."
+                    " You discover wonderful and mysterious celestial bodies"
+                    " across the universe.",
+                    stat_mods={STATS.INT: 2, STATS.MON: 10},
+                    skills_gained=[SKILLS.ASTRONOMER]
+                ),
+                failure=EventResult(
+                    desc="You failed the interview. Try again later.",
+                    stat_mods={STATS.MON: -50},
+                ),
+            ),
+            EventChoice(
+                name='Politician.',
+                skill_reqs=[SKILLS.RHETORIC, SKILLS.COMMUNICATION_3],
+                checks=[StatCheck(STATS.CHA, num_dice=1, sides=20, dc=40)],
+                success=EventResult(
+                    desc="You have decided to become a politician."
+                    " Have fun on Capitol Hill.",
+                    stat_mods={STATS.CHA: 5, STATS.MON: 50, STATS.REP: 20},
+                    skills_gained=[SKILLS.POLITICIAN]
+                ),
+                failure=EventResult(
+                    desc="No one voted for you. Try again later.",
+                    stat_mods={STATS.MON: -50, STATS.REP: -10},
                 ),
             ),
         ],
