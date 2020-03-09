@@ -1378,7 +1378,7 @@ class GameOver(urwid.WidgetWrap):
         body.append(urwid.Text(f"Score: {player.stats[STATS.PTS]}"))
         body.append(urwid.Divider())
         body.append(urwid.Text(f'{date.today().strftime("%B %d, %Y")}'))
-        self.saved_text = urwid.Text("")
+        self.saved_text = urwid.Text("Enter to save highscore...")
         body.append(self.saved_text)
         body.append(urwid.Divider("-"))
         highscores_button = BetterButton("View Highscores")
